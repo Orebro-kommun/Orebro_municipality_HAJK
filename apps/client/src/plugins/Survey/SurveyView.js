@@ -8,13 +8,6 @@ import "survey-core/defaultV2.min.css";
 import "survey-core/i18n/swedish";
 import ReactDOM from "react-dom/client";
 //import WKT from "ol/format/WKT";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-} from "@mui/material";
 
 import EditView from "./EditView.js";
 import EditModel from "./EditModel.js";
@@ -104,7 +97,6 @@ function SurveyView(props) {
   const hasRestartButtonText =
     props.options.restartButtonText &&
     props.options.restartButtonText.trim() !== "";
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const rootMap = useRef(new Map());
 
@@ -126,16 +118,7 @@ function SurveyView(props) {
   }
 
   const handleAction = () => {
-    setShowConfirmDialog(true);
-  };
-
-  const handleDialogClose = () => {
-    setShowConfirmDialog(false);
     closeSurvey();
-  };
-
-  const handleDialogAbort = () => {
-    setShowConfirmDialog(false);
   };
 
   const closeSurvey = () => {
@@ -228,6 +211,7 @@ function SurveyView(props) {
         editModel.source &&
         editModel.source.id === "simulated"
       ) {
+        // Collect feature data based on specific surveyAnswerId
         featureData = editModel.newMapData
           .filter(
             (feature) => feature.surveyAnswerId === specificSurveyAnswerId
@@ -240,30 +224,40 @@ function SurveyView(props) {
       }
 
       const resultData = [];
-      for (const [key, question] of Object.entries(survey.data)) {
-        const surveyQuestion = survey.getQuestionByName(key);
-        if (!!surveyQuestion) {
-          const item = {
-            title: surveyQuestion.title,
-            value: question,
-            name: surveyQuestion.name,
-          };
-          resultData.push(item);
-        }
-      }
+      const answeredQuestions = survey.data;
 
+      // Iterate over all questions and include unanswered ones,
+      // but only if they are not already in featureData
+      survey.getAllQuestions().forEach((question) => {
+        const existsInFeatureData = featureData.some(
+          (feature) => feature.name === question.name
+        );
+        if (!existsInFeatureData) {
+          const answer = answeredQuestions[question.name];
+          resultData.push({
+            title: question.title,
+            value: answer !== undefined ? answer : null, // Set value to null if unanswered
+            name: question.name,
+          });
+        }
+      });
+
+      // Merge resultData (survey data) and featureData
       const mergedResults = [...resultData, ...featureData];
 
+      // Combine data into the final format to send to handleOnComplete
       const combinedData = {
         ...surveyJsData,
         surveyResults: mergedResults,
         mailTemplate: props.options.selectedMailTemplate,
       };
+
       try {
+        // Call the handleOnComplete method with combined data
         await props.model.handleOnComplete(combinedData);
       } catch (error) {
         setShowErrorMessage(
-          "Ett fel uppstod vid inlämning av enkät" //+ error.message
+          "Ett fel uppstod vid inlämning av enkät" // + error.message
         );
       }
       setIsCompleted(true);
@@ -484,26 +478,6 @@ function SurveyView(props) {
           >
             Stäng enkätfönster
           </button>
-        </div>
-      )}
-      {showConfirmDialog && (
-        <div>
-          <Dialog open={showConfirmDialog} onClose={handleDialogAbort}>
-            <DialogTitle>Är du säker?</DialogTitle>
-            <DialogContent>
-              Är du säker på att du vill stänga fönstret? Enkäten är redan
-              inskickad. Om du stänger fönstret nu kommer du att återgå till
-              början, men inga ytterligare ändringar kan göras.
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleDialogAbort} color="primary">
-                Avbryt
-              </Button>
-              <Button onClick={handleDialogClose} color="primary" autoFocus>
-                Stäng fönstret
-              </Button>
-            </DialogActions>
-          </Dialog>
         </div>
       )}
       {showErrorMessage && (
