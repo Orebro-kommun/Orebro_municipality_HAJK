@@ -1,10 +1,11 @@
 **1. Setup instructions**
 
-In the config.json in admin, you should see the following pieces of configuration for the citizen dialogue plugin:
+In the config.json in admin, you should see the following pieces of configuration for the survey plugin:
 
 
 ```
   "surveyhandler": {
+    "url_surveys_mailtemplatelist": "https://kartaop2050admin.orebro.se/api/v2/surveys/mailtemplatelist/",
     "url_surveys_list": "https://kartaop2050admin.orebro.se/api/v2/surveys/list/",
     "url_surveys_load": "https://kartaop2050admin.orebro.se/api/v2/surveys/",
     "url_surveys_save": "https://kartaop2050admin.orebro.se/api/v2/surveys/",
@@ -18,6 +19,7 @@ There is also a few settings to be made under "mapsettings":
 
 
 ```
+"url_surveys_mailtemplatelist": "https://kartaop2050admin.orebro.se/api/v2/surveys/mailtemplatelist/",
 "url_surveys_list": "https://kartaop2050admin.orebro.se/api/v2/surveys/list/",
 "url_surveys_load": "https://kartaop2050admin.orebro.se/api/v2/surveys/",
 "url_surveys_answers_save": "https://kartaop2050admin.orebro.se/api/v2/surveys/answers/",
@@ -113,7 +115,7 @@ For every question, you can also set whether the question is compulsory or not.
 
 **3.2 Setup a survey in admin (Survey plugin)**
 
-In the settings of each map, the plugin "Enkätverktyg" can for instance be activated to add the Citizen dialogue plugin to the map.
+In the settings of each map, the plugin "Enkätverktyg" can for instance be activated to add the Survey plugin to the map.
 
 
 A single survey can be added to the map using the "Välj enkät"-list.
