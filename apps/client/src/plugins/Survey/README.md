@@ -115,7 +115,7 @@ For every question, you can also set whether the question is compulsory or not.
 
 **3.2 Setup a survey in admin (Survey plugin)**
 
-In the settings of each map, the plugin "Enkätverktyg" can for instance be activated to add the Citizen dialogue plugin to the map.
+In the settings of each map, the plugin "Enkätverktyg" can for instance be activated to add the Survey plugin to the map.
 
 
 A single survey can be added to the map using the "Välj enkät"-list.
