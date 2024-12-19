@@ -30,6 +30,7 @@ function SurveyHandler(props) {
     useState("");
   const [isSurveyDirty, setIsSurveyDirty] = useState(false);
   const [SelectionNotSaved, setSelectionNotSaved] = useState("");
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const [survey, setSurvey] = useState({
     title: "",
@@ -295,73 +296,98 @@ function SurveyHandler(props) {
             />
           </div>
         )}
-        {/* Dependency/VisibleIf selection */}
         <div>
-          <label>
-            Beroende av:{" "}
-            <Select
-              style={{
-                marginBottom: "20px",
-                backgroundColor: "white",
-                width: "60%",
-              }}
-              value={
-                question.visibleIf
-                  ? question.visibleIf.match(/\{([^}]+)\}/)?.[1] || ""
-                  : ""
-              }
-              onChange={(e) => {
-                const questionName = e.target.value;
-                const currentCondition =
-                  question.visibleIf?.split(" ").slice(1).join(" ") || "";
-                const newVisibleIf = `{${questionName}} ${currentCondition}`;
-                updateQuestion(
-                  selectedQuestion.pageIndex,
-                  selectedQuestion.questionIndex,
-                  "visibleIf",
-                  newVisibleIf
-                );
-              }}
-            >
-              <MenuItem value="">Ingen</MenuItem>
-              {survey.pages.flatMap((page) =>
-                page.questions.map((q) => (
-                  <MenuItem key={q.name} value={q.name}>
-                    {q.title || q.name}{" "}
-                    {/* Använd q.title om den finns, annars q.name */}
-                  </MenuItem>
-                ))
-              )}
-            </Select>
-          </label>
-        </div>
+          {/* Toggle to show */}
+          <p
+            onClick={() => setIsCollapsed((prev) => !prev)}
+            style={{
+              marginBottom: "10px",
+              cursor: "pointer",
+              color: "#333333",
+              textDecoration: "underline",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            {isCollapsed
+              ? "Visa Beroendeinställningar"
+              : "Dölj Beroendeinställningar"}
+          </p>
+          {!isCollapsed && (
+            <>
+              {/* Dependency/VisibleIf selection */}
+              <div>
+                <label>
+                  Beroende av:{" "}
+                  <Select
+                    style={{
+                      marginBottom: "20px",
+                      backgroundColor: "white",
+                      width: "80%",
+                    }}
+                    value={
+                      question.visibleIf
+                        ? question.visibleIf.match(/\{([^}]+)\}/)?.[1] || ""
+                        : ""
+                    }
+                    onChange={(e) => {
+                      const questionName = e.target.value;
+                      const currentCondition =
+                        question.visibleIf?.split(" ").slice(1).join(" ") || "";
+                      const newVisibleIf = `{${questionName}} ${currentCondition}`;
+                      updateQuestion(
+                        selectedQuestion.pageIndex,
+                        selectedQuestion.questionIndex,
+                        "visibleIf",
+                        newVisibleIf
+                      );
+                    }}
+                  >
+                    <MenuItem value="">Ingen</MenuItem>
+                    {survey.pages.flatMap((page) =>
+                      page.questions
+                        .filter((q) =>
+                          ["radio", "checkbox", "rating"].includes(q.type)
+                        ) // Filter questiontypess
+                        .map((q) => (
+                          <MenuItem key={q.name} value={q.name}>
+                            {q.title || q.name}{" "}
+                          </MenuItem>
+                        ))
+                    )}
+                  </Select>
+                </label>
+              </div>
 
-        <div>
-          <label>
-            Villkor:{" "}
-            <input
-              type="text"
-              placeholder="Exempel: >5 eller =='Ja'"
-              value={
-                question.visibleIf
-                  ? question.visibleIf.split(" ").slice(1).join(" ")
-                  : ""
-              }
-              style={{ width: "100%", marginBottom: "20px" }}
-              onChange={(e) => {
-                const condition = e.target.value;
-                const currentQuestionName =
-                  question.visibleIf?.match(/\{([^}]+)\}/)?.[1] || "";
-                const newVisibleIf = `{${currentQuestionName}} ${condition}`;
-                updateQuestion(
-                  selectedQuestion.pageIndex,
-                  selectedQuestion.questionIndex,
-                  "visibleIf",
-                  newVisibleIf
-                );
-              }}
-            />
-          </label>
+              <div>
+                <label>
+                  Villkor:{" "}
+                  <input
+                    type="text"
+                    placeholder="Exempel1: >5 Exempel2: =='Ja'"
+                    value={
+                      question.visibleIf
+                        ? question.visibleIf.split(" ").slice(1).join(" ")
+                        : ""
+                    }
+                    style={{ width: "80%", marginBottom: "20px" }}
+                    onChange={(e) => {
+                      const condition = e.target.value;
+                      const currentQuestionName =
+                        question.visibleIf?.match(/\{([^}]+)\}/)?.[1] || "";
+                      const newVisibleIf = `{${currentQuestionName}} ${condition}`;
+                      updateQuestion(
+                        selectedQuestion.pageIndex,
+                        selectedQuestion.questionIndex,
+                        "visibleIf",
+                        newVisibleIf
+                      );
+                    }}
+                  />
+                </label>
+              </div>
+            </>
+          )}
         </div>
         <div>
           <label>
