@@ -347,7 +347,7 @@ function SurveyHandler(props) {
                     {survey.pages.flatMap((page) =>
                       page.questions
                         .filter((q) =>
-                          ["radio", "checkbox", "rating"].includes(q.type)
+                          ["radiogroup", "checkbox", "rating"].includes(q.type)
                         ) // Filter questiontypess
                         .map((q) => (
                           <MenuItem key={q.name} value={q.name}>
@@ -364,7 +364,7 @@ function SurveyHandler(props) {
                   Villkor:{" "}
                   <input
                     type="text"
-                    placeholder="Exempel1: >5 Exempel2: =='Ja'"
+                    placeholder="Exempel1: >5 Exempel2: contains 'värde'"
                     value={
                       question.visibleIf
                         ? question.visibleIf.split(" ").slice(1).join(" ")
