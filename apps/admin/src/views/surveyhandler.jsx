@@ -107,6 +107,19 @@ function SurveyHandler(props) {
     setSelectedPageIndex(pageIndex);
   };
 
+  const getNextQuestionId = (survey) => {
+    // Find all existing qid-values
+    const questionIds = survey.pages.flatMap((page) =>
+      page.questions.map((question) => {
+        const match = question.name.match(/^qid(\d+)$/);
+        return match ? parseInt(match[1], 10) : null;
+      })
+    );
+
+    const maxId = Math.max(...questionIds.filter((id) => id !== null), -1);
+    return maxId + 1;
+  };
+
   const renderSelectedQuestionForm = () => {
     if (
       selectedQuestion === null ||
@@ -437,9 +450,10 @@ function SurveyHandler(props) {
 
   const addQuestion = (pageIndex, type = "text") => {
     setIsSurveyDirty(true);
+    const nextQuestionId = getNextQuestionId(survey);
     const questionIndex = survey.pages[pageIndex].questions.length;
     const newQuestion = {
-      name: `qid${questionIndex}`,
+      name: `qid${nextQuestionId}`,
       title: "",
       type,
       isRequired: false,
@@ -462,7 +476,6 @@ function SurveyHandler(props) {
       }
       return page;
     });
-
     setSelectedQuestion({ pageIndex, questionIndex });
     setSurvey({ ...survey, pages: newPages });
   };
@@ -615,23 +628,6 @@ function SurveyHandler(props) {
   const saveSurvey = () => {
     // Create a copy of the survey to avoid direct mutation
     let newSurvey = { ...survey };
-
-    // Initialize a question counter
-    let questionCounter = 0;
-
-    // Iterate over each page and its questions
-    newSurvey.pages = newSurvey.pages.map((page) => {
-      let newQuestions = page.questions.map((question) => {
-        if (question.inputType === "email") {
-          // Keep the name as "email" for email questions
-          return { ...question, name: "email" };
-        } else {
-          // Assign a unique name based on the counter
-          return { ...question, name: `qid${questionCounter++}` };
-        }
-      });
-      return { ...page, questions: newQuestions };
-    });
 
     // Serialize the survey to JSON
     const surveyJson = JSON.stringify(newSurvey);
