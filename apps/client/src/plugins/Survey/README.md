@@ -1,6 +1,6 @@
 **1. Setup instructions**
 
-In the config.json in admin, you should see the following pieces of configuration for the citizen dialogue plugin:
+In the config.json in admin, you should see the following pieces of configuration for the survey plugin:
 
 
 ```
