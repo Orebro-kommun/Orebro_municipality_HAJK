@@ -373,10 +373,12 @@ function SurveyHandler(props) {
                     }
                     style={{ width: "80%", marginBottom: "20px" }}
                     onChange={(e) => {
-                      const condition = e.target.value;
+                      const condition = e.target.value.trim();
                       const currentQuestionName =
                         question.visibleIf?.match(/\{([^}]+)\}/)?.[1] || "";
-                      const newVisibleIf = `{${currentQuestionName}} ${condition}`;
+                      const newVisibleIf = currentQuestionName
+                        ? `{${currentQuestionName}} ${condition}`
+                        : "";
                       updateQuestion(
                         selectedQuestion.pageIndex,
                         selectedQuestion.questionIndex,
