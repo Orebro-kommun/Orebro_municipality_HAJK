@@ -41,6 +41,7 @@ function SurveyHandler(props) {
     logoPosition: "left",
     showQuestionNumbers: "false",
     pages: [{ questions: [] }],
+    clearInvisibleValues: "onHidden",
   });
 
   useEffect(() => {
