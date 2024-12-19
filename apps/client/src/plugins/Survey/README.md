@@ -5,6 +5,7 @@ In the config.json in admin, you should see the following pieces of configuratio
 
 ```
   "surveyhandler": {
+    "url_surveys_mailtemplatelist": "https://kartaop2050admin.orebro.se/api/v2/surveys/mailtemplatelist/",
     "url_surveys_list": "https://kartaop2050admin.orebro.se/api/v2/surveys/list/",
     "url_surveys_load": "https://kartaop2050admin.orebro.se/api/v2/surveys/",
     "url_surveys_save": "https://kartaop2050admin.orebro.se/api/v2/surveys/",
@@ -18,6 +19,7 @@ There is also a few settings to be made under "mapsettings":
 
 
 ```
+"url_surveys_mailtemplatelist": "https://kartaop2050admin.orebro.se/api/v2/surveys/mailtemplatelist/",
 "url_surveys_list": "https://kartaop2050admin.orebro.se/api/v2/surveys/list/",
 "url_surveys_load": "https://kartaop2050admin.orebro.se/api/v2/surveys/",
 "url_surveys_answers_save": "https://kartaop2050admin.orebro.se/api/v2/surveys/answers/",
