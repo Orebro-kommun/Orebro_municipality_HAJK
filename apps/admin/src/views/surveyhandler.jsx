@@ -331,76 +331,72 @@ function SurveyHandler(props) {
             <>
               {/* Dependency/VisibleIf selection */}
               <div>
-                <label>
-                  Beroende av:{" "}
-                  <Select
-                    style={{
-                      marginBottom: "20px",
-                      backgroundColor: "white",
-                      width: "80%",
-                    }}
-                    value={
-                      question.visibleIf
-                        ? question.visibleIf.match(/\{([^}]+)\}/)?.[1] || ""
-                        : ""
-                    }
-                    onChange={(e) => {
-                      const questionName = e.target.value;
-                      const currentCondition =
-                        question.visibleIf?.split(" ").slice(1).join(" ") || "";
-                      const newVisibleIf = `{${questionName}} ${currentCondition}`;
-                      updateQuestion(
-                        selectedQuestion.pageIndex,
-                        selectedQuestion.questionIndex,
-                        "visibleIf",
-                        newVisibleIf
-                      );
-                    }}
-                  >
-                    <MenuItem value="">Ingen</MenuItem>
-                    {survey.pages.flatMap((page) =>
-                      page.questions
-                        .filter((q) =>
-                          ["radiogroup", "checkbox", "rating"].includes(q.type)
-                        ) // Filter questiontypess
-                        .map((q) => (
-                          <MenuItem key={q.name} value={q.name}>
-                            {q.title || q.name}{" "}
-                          </MenuItem>
-                        ))
-                    )}
-                  </Select>
-                </label>
+                <label>Beroende av: </label>{" "}
+                <Select
+                  style={{
+                    marginBottom: "20px",
+                    backgroundColor: "white",
+                    width: "80%",
+                  }}
+                  value={
+                    question.visibleIf
+                      ? question.visibleIf.match(/\{([^}]+)\}/)?.[1] || ""
+                      : ""
+                  }
+                  onChange={(e) => {
+                    const questionName = e.target.value;
+                    const currentCondition =
+                      question.visibleIf?.split(" ").slice(1).join(" ") || "";
+                    const newVisibleIf = `{${questionName}} ${currentCondition}`;
+                    updateQuestion(
+                      selectedQuestion.pageIndex,
+                      selectedQuestion.questionIndex,
+                      "visibleIf",
+                      newVisibleIf
+                    );
+                  }}
+                >
+                  <MenuItem value="">Ingen</MenuItem>
+                  {survey.pages.flatMap((page) =>
+                    page.questions
+                      .filter((q) =>
+                        ["radiogroup", "checkbox", "rating"].includes(q.type)
+                      ) // Filter questiontypess
+                      .map((q) => (
+                        <MenuItem key={q.name} value={q.name}>
+                          {q.title || q.name}{" "}
+                        </MenuItem>
+                      ))
+                  )}
+                </Select>
               </div>
 
               <div>
-                <label>
-                  Villkor:{" "}
-                  <input
-                    type="text"
-                    placeholder="Exempel1: >5 Exempel2: contains 'värde'"
-                    value={
-                      question.visibleIf
-                        ? question.visibleIf.split(" ").slice(1).join(" ")
-                        : ""
-                    }
-                    style={{ width: "80%", marginBottom: "20px" }}
-                    onChange={(e) => {
-                      const condition = e.target.value.trim();
-                      const currentQuestionName =
-                        question.visibleIf?.match(/\{([^}]+)\}/)?.[1] || "";
-                      const newVisibleIf = currentQuestionName
-                        ? `{${currentQuestionName}} ${condition}`
-                        : "";
-                      updateQuestion(
-                        selectedQuestion.pageIndex,
-                        selectedQuestion.questionIndex,
-                        "visibleIf",
-                        newVisibleIf
-                      );
-                    }}
-                  />
-                </label>
+                <label>Villkor: </label>{" "}
+                <input
+                  type="text"
+                  placeholder="Exempel1: >5 | Exempel2: contains 'värde' | Exempel3: =='Ja'"
+                  value={
+                    question.visibleIf
+                      ? question.visibleIf.split(" ").slice(1).join(" ")
+                      : ""
+                  }
+                  style={{ width: "80%", marginBottom: "20px" }}
+                  onChange={(e) => {
+                    const condition = e.target.value.trim();
+                    const currentQuestionName =
+                      question.visibleIf?.match(/\{([^}]+)\}/)?.[1] || "";
+                    const newVisibleIf = currentQuestionName
+                      ? `{${currentQuestionName}} ${condition}`
+                      : "";
+                    updateQuestion(
+                      selectedQuestion.pageIndex,
+                      selectedQuestion.questionIndex,
+                      "visibleIf",
+                      newVisibleIf
+                    );
+                  }}
+                />
               </div>
             </>
           )}
