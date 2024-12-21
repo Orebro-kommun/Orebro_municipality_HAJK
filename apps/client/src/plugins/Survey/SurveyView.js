@@ -308,16 +308,13 @@ function SurveyView(props) {
       editViewRef.current.onSaveClicked();
     }
 
-    // 2) Clear all features from the map (if you want to start completely fresh)
-    //    This assumes you have a reference to your model / editModel:
+    // 2) Clear all features from the map
     if (editModel?.vectorSource) {
       editModel.vectorSource.clear();
       // This removes ALL features from the layer
-      // (Alternatively, filter out only the features you don't want to keep)
     }
 
     // 3) Hide EditView — if you want it to be unmounted entirely,
-    //    ensure you don't render <EditView> at all (e.g., { showEditView.show && <EditView .../> }).
     setShowEditView({ show: false });
   };
 
@@ -447,15 +444,12 @@ function SurveyView(props) {
               features.forEach((feature) => {
                 if (feature.get("SURVEYQUESTIONNAME") === q.name) {
                   feature.modification = "removed";
-                  // If you want to remove it visually from the map right away:
-                  // editModel.vectorSource.removeFeature(feature);
                 }
               });
             }
           }
 
           // 4) Call the existing save function in EditView
-          //    (instead of model.save(...))
           if (editViewRef?.current?.onSaveClicked) {
             editViewRef.current.onSaveClicked();
           }
