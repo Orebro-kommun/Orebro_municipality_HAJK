@@ -99,6 +99,7 @@ function SurveyView(props) {
     props.options.restartButtonText.trim() !== "";
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const rootMap = useRef(new Map());
+  const visibleChangedHandlerRef = React.useRef(null);
 
   // Used for responseanswer
   const [isCompleted, setIsCompleted] = useState(false);
@@ -300,9 +301,23 @@ function SurveyView(props) {
   };
 
   const handlePageChange = () => {
-    if (showEditView.show) {
+    // 1) If EditView is visible, either save or clear any ongoing edits
+    if (showEditView.show && editViewRef?.current?.onSaveClicked) {
+      // onSaveClicked will send a WFS-T transaction or clear
+      // newMapData in "simulated" mode, depending on your implementation
       editViewRef.current.onSaveClicked();
     }
+
+    // 2) Clear all features from the map (if you want to start completely fresh)
+    //    This assumes you have a reference to your model / editModel:
+    if (editModel?.vectorSource) {
+      editModel.vectorSource.clear();
+      // This removes ALL features from the layer
+      // (Alternatively, filter out only the features you don't want to keep)
+    }
+
+    // 3) Hide EditView — if you want it to be unmounted entirely,
+    //    ensure you don't render <EditView> at all (e.g., { showEditView.show && <EditView .../> }).
     setShowEditView({ show: false });
   };
 
@@ -392,6 +407,72 @@ function SurveyView(props) {
     setSurvey(newSurvey);
     return () => {};
   }, [surveyJSON, surveyTheme, surveyKey]);
+
+  useEffect(() => {
+    if (!survey) return;
+
+    visibleChangedHandlerRef.current = (sender, options) => {
+      const q = options.question;
+      if (!q) return;
+
+      // If a question becomes hidden...
+      if (!q.visible) {
+        // 1) Check if it's one of your geometry types
+        const qt = q.getType();
+        const isAnyGeometryType = [
+          "geometry",
+          "geometrypoint",
+          "geometrylinestring",
+          "geometrypolygon",
+          "geometrypointposition",
+        ].includes(qt);
+
+        if (isAnyGeometryType) {
+          // 2) Clear the value in SurveyJS so that nothing is saved for this question
+          sender.setValue(q.name, null);
+
+          // 3) Handle either simulated or WFS-T mode
+          if (editModel?.source?.id === "simulated") {
+            // -- Simulated Mode: remove the geometry from newMapData
+            if (editModel?.newMapData) {
+              editModel.newMapData = editModel.newMapData.filter(
+                (feature) => feature.surveyQuestionName !== q.name
+              );
+            }
+          } else {
+            // -- WFS-T Mode: mark the corresponding feature as "removed"
+            //    so the WFS-T transaction knows to delete it
+            if (editModel?.vectorSource) {
+              const features = editModel.vectorSource.getFeatures();
+              features.forEach((feature) => {
+                if (feature.get("SURVEYQUESTIONNAME") === q.name) {
+                  feature.modification = "removed";
+                  // If you want to remove it visually from the map right away:
+                  // editModel.vectorSource.removeFeature(feature);
+                }
+              });
+            }
+          }
+
+          // 4) Call the existing save function in EditView
+          //    (instead of model.save(...))
+          if (editViewRef?.current?.onSaveClicked) {
+            editViewRef.current.onSaveClicked();
+          }
+        }
+      }
+    };
+
+    // Attach the event
+    survey.onVisibleChanged.add(visibleChangedHandlerRef.current);
+
+    // Remove the event when the component unmounts or 'survey' changes
+    return () => {
+      if (visibleChangedHandlerRef.current) {
+        survey.onVisibleChanged.remove(visibleChangedHandlerRef.current);
+      }
+    };
+  }, [survey, editModel, editViewRef]);
 
   Survey.surveyLocalization.defaultLocale = "sv";
 
