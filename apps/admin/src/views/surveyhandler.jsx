@@ -331,74 +331,14 @@ function SurveyHandler(props) {
             <>
               {/* Dependency/VisibleIf selection */}
               <div>
-                <label>Beroende av: </label>{" "}
-                <Select
-                  style={{
-                    marginBottom: "20px",
-                    backgroundColor: "white",
-                    width: "80%",
-                  }}
-                  value={
-                    question.visibleIf
-                      ? question.visibleIf.match(/\{([^}]+)\}/)?.[1] || ""
-                      : ""
-                  }
-                  onChange={(e) => {
-                    const questionName = e.target.value;
-                    const currentCondition =
-                      question.visibleIf?.split(" ").slice(1).join(" ") || "";
-                    const newVisibleIf = `{${questionName}} ${currentCondition}`;
-                    updateQuestion(
-                      selectedQuestion.pageIndex,
-                      selectedQuestion.questionIndex,
-                      "visibleIf",
-                      newVisibleIf
-                    );
-                  }}
-                >
-                  <MenuItem value="">Ingen</MenuItem>
-                  {survey.pages.flatMap((page) =>
-                    page.questions
-                      .filter((q) =>
-                        ["radiogroup", "checkbox", "rating"].includes(q.type)
-                      ) // Filter questiontypess
-                      .map((q) => (
-                        <MenuItem key={q.name} value={q.name}>
-                          {q.title || q.name}{" "}
-                        </MenuItem>
-                      ))
-                  )}
-                </Select>
-              </div>
-
-              <div>
-                <label>Villkor: </label>
+                <label>Villkor: </label>{" "}
                 <input
                   type="text"
-                  placeholder="Exempel1: >5 | Exempel2: contains 'värde' | Exempel3: =='Ja'"
-                  value={
-                    // Only show part that comes after {fragaNamn}
-                    question.visibleIf
-                      ? // Replace `{...}` + ev. sapace at start with empty string
-                        question.visibleIf.replace(/{([^}]+)\}\s?/, "")
-                      : ""
-                  }
+                  placeholder="Exempel: {qid0}='Ja' or {qid0}='Kanske' | Exempel: {qid0}<5 | Exempel: {qid0} contains 'värde'"
+                  value={question.visibleIf || ""}
                   style={{ width: "80%", marginBottom: "20px" }}
                   onChange={(e) => {
-                    // Fetch whole string including space
-                    const condition = e.target.value;
-                    const currentQuestionName =
-                      question.visibleIf?.match(/\{([^}]+)\}/)?.[1] || "";
-
-                    // To ensure that we always have a question name:
-                    // const currentQuestionName = question.name || "";
-
-                    // Combine "visibleIf" with the question name + the condition from input.
-
-                    const newVisibleIf = currentQuestionName
-                      ? `{${currentQuestionName}} ${condition}`
-                      : condition;
-
+                    const newVisibleIf = e.target.value;
                     updateQuestion(
                       selectedQuestion.pageIndex,
                       selectedQuestion.questionIndex,
@@ -972,12 +912,12 @@ function SurveyHandler(props) {
                             question.inputType === "email"
                               ? "Epost"
                               : question.type
-                          })`
+                          } - ${question.name})`
                         : `Fråga ${questionIndex + 1} (${
                             question.inputType === "email"
                               ? "Epost"
                               : question.type
-                          })`}
+                          } - ${question.name})`}
                     </p>
                   ))}
                 </div>
