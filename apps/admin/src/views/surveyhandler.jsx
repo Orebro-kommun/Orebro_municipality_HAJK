@@ -372,23 +372,33 @@ function SurveyHandler(props) {
               </div>
 
               <div>
-                <label>Villkor: </label>{" "}
+                <label>Villkor: </label>
                 <input
                   type="text"
                   placeholder="Exempel1: >5 | Exempel2: contains 'värde' | Exempel3: =='Ja'"
                   value={
+                    // Only show part that comes after {fragaNamn}
                     question.visibleIf
-                      ? question.visibleIf.split(" ").slice(1).join(" ")
+                      ? // Replace `{...}` + ev. sapace at start with empty string
+                        question.visibleIf.replace(/{([^}]+)\}\s?/, "")
                       : ""
                   }
                   style={{ width: "80%", marginBottom: "20px" }}
                   onChange={(e) => {
-                    const condition = e.target.value.trim();
+                    // Fetch whole string including space
+                    const condition = e.target.value;
                     const currentQuestionName =
                       question.visibleIf?.match(/\{([^}]+)\}/)?.[1] || "";
+
+                    // To ensure that we always have a question name:
+                    // const currentQuestionName = question.name || "";
+
+                    // Combine "visibleIf" with the question name + the condition from input.
+
                     const newVisibleIf = currentQuestionName
                       ? `{${currentQuestionName}} ${condition}`
-                      : "";
+                      : condition;
+
                     updateQuestion(
                       selectedQuestion.pageIndex,
                       selectedQuestion.questionIndex,
