@@ -1,4 +1,4 @@
-import { WFS } from "ol/format";
+import { WFS, GeoJSON } from "ol/format";
 import { Style, Stroke, Fill, Circle, RegularShape } from "ol/style";
 import { MultiPoint, Polygon } from "ol/geom";
 import Vector from "ol/layer/Vector";
@@ -12,6 +12,7 @@ import WKT from "ol/format/WKT";
 import Feature from "ol/Feature";
 import proj4 from "proj4";
 import Point from "ol/geom/Point";
+import booleanWithin from "@turf/boolean-within";
 
 class EditModel {
   constructor(settings) {
@@ -856,6 +857,50 @@ class EditModel {
       // interaction after one cpu-cycle.
       // If this is not added, the user will get a zoom-event when closing
       // a polygon drawing.
+
+      // Convert the newly drawn geometry to GeoJSON (for Turf)
+      const geoJsonFormat = new GeoJSON();
+      const drawnGeoJSON = geoJsonFormat.writeFeatureObject(event.feature);
+
+      // Retrieve the polygon layer (e.g., via a "title" property)
+      // 1. Get the LayerGroup from the map
+      const layerGroup = this.map.getLayerGroup();
+
+      // 2. Get an array of all layers in the LayerGroup
+      const layersArray = layerGroup.getLayers().getArray();
+
+      // 3. Find the specific layer with the caption "boundary"
+      const boundaryLayer = layersArray.find(
+        (layer) => layer.get("caption") === "begransning"
+      );
+
+      // If we found the polygon layer: check if the drawn geometry is within it
+      if (boundaryLayer) {
+        const boundaryFeatures = boundaryLayer.getSource().getFeatures();
+        let isInsideAnyPolygon = false;
+
+        // Check against each polygon in the layer
+        boundaryFeatures.forEach((boundaryFeature) => {
+          const boundaryGeoJSON =
+            geoJsonFormat.writeFeatureObject(boundaryFeature);
+
+          // booleanWithin returns true if the entire drawnGeoJSON is within boundaryGeoJSON
+          if (booleanWithin(drawnGeoJSON, boundaryGeoJSON)) {
+            isInsideAnyPolygon = true;
+          }
+        });
+
+        if (isInsideAnyPolygon) {
+          console.log(
+            "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
+          );
+        } else {
+          console.log("Den ritade geometrin ligger utanför polygonlagret.");
+        }
+      } else {
+        console.warn("Hittade inget polygonlager med titeln 'begransning'.");
+      }
+
       setTimeout(() => {
         this.deactivateInteraction();
         this.observer.publish("deactivateEditInteraction");
