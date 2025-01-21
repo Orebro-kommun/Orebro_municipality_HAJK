@@ -841,6 +841,18 @@ class EditModel {
       feature.setStyle(this.getHiddenStyle());
     });
 
+    // Retrieve the polygon layer (e.g., via a "title" property)
+    // 1. Get the LayerGroup from the map
+    const layerGroup = this.map.getLayerGroup();
+
+    // 2. Get an array of all layers in the LayerGroup
+    const layersArray = layerGroup.getLayers().getArray();
+
+    // 3. Find the specific layer with the caption "boundary"
+    const boundaryLayer = layersArray.find(
+      (layer) => layer.get("name") === this.options.selectedGeofencingLayer
+    );
+
     this.draw = new Draw({
       source: this.vectorSource,
       style: this.getSketchStyle(),
@@ -862,43 +874,35 @@ class EditModel {
       const geoJsonFormat = new GeoJSON();
       const drawnGeoJSON = geoJsonFormat.writeFeatureObject(event.feature);
 
-      // Retrieve the polygon layer (e.g., via a "title" property)
-      // 1. Get the LayerGroup from the map
-      const layerGroup = this.map.getLayerGroup();
+      try {
+        // If we found the polygon layer: check if the drawn geometry is within it
+        if (boundaryLayer) {
+          const boundaryFeatures = boundaryLayer.getSource().getFeatures();
+          let isInsideAnyPolygon = false;
 
-      // 2. Get an array of all layers in the LayerGroup
-      const layersArray = layerGroup.getLayers().getArray();
+          // Check against each polygon in the layer
+          boundaryFeatures.forEach((boundaryFeature) => {
+            const boundaryGeoJSON =
+              geoJsonFormat.writeFeatureObject(boundaryFeature);
 
-      // 3. Find the specific layer with the caption "boundary"
-      const boundaryLayer = layersArray.find(
-        (layer) => layer.get("caption") === "begransning"
-      );
+            // booleanWithin returns true if the entire drawnGeoJSON is within boundaryGeoJSON
+            if (booleanWithin(drawnGeoJSON, boundaryGeoJSON)) {
+              isInsideAnyPolygon = true;
+            }
+          });
 
-      // If we found the polygon layer: check if the drawn geometry is within it
-      if (boundaryLayer) {
-        const boundaryFeatures = boundaryLayer.getSource().getFeatures();
-        let isInsideAnyPolygon = false;
-
-        // Check against each polygon in the layer
-        boundaryFeatures.forEach((boundaryFeature) => {
-          const boundaryGeoJSON =
-            geoJsonFormat.writeFeatureObject(boundaryFeature);
-
-          // booleanWithin returns true if the entire drawnGeoJSON is within boundaryGeoJSON
-          if (booleanWithin(drawnGeoJSON, boundaryGeoJSON)) {
-            isInsideAnyPolygon = true;
+          if (isInsideAnyPolygon) {
+            console.log(
+              "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
+            );
+          } else {
+            console.log("Den ritade geometrin ligger utanför polygonlagret.");
           }
-        });
-
-        if (isInsideAnyPolygon) {
-          console.log(
-            "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
-          );
         } else {
-          console.log("Den ritade geometrin ligger utanför polygonlagret.");
+          console.warn("Hittade inget polygonlager med rätt id.");
         }
-      } else {
-        console.warn("Hittade inget polygonlager med titeln 'begransning'.");
+      } catch (error) {
+        console.error("Ett fel uppstod när geometrin kontrollerades:", error);
       }
 
       setTimeout(() => {

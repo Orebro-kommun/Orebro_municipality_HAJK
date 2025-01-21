@@ -19,6 +19,7 @@ const ColorButtonBlue = withStyles((theme) => ({
 }))(Button);
 
 const defaultState = {
+  geofencingLayers: [],
   validationErrors: [],
   active: false,
   index: 0,
@@ -31,7 +32,9 @@ const defaultState = {
   editableLayers: {},
   selectedSurvey: "",
   selectedMailTemplate: "",
-  responseMessage: "<div style=\"font-size: 25px; font-weight: bold;\">Tack för att du svarade på våra frågor!</div>\n<div>Mera text...</div>",
+  selectedGeofencingLayer: "",
+  responseMessage:
+    '<div style="font-size: 25px; font-weight: bold;">Tack för att du svarade på våra frågor!</div>\n<div>Mera text...</div>',
   restartButtonText: "Vill du svara på enkäten en gång till? Klicka här!",
   tree: "",
 };
@@ -52,20 +55,27 @@ class ToolOptions extends Component {
     this.availableSurveys = [];
     this.availableMailTemplates = [];
 
-    this.listAllAvailableSurveys((list) => {
-      this.availableSurveys = list;
-    }, (error) => {
-      console.error("Error:", error);
-    });
+    this.listAllAvailableSurveys(
+      (list) => {
+        this.availableSurveys = list;
+      },
+      (error) => {
+        console.error("Error:", error);
+      }
+    );
 
-    this.listAllAvailableMailTemplates((list) => {
-      this.availableMailTemplates = list;
-    }, (error) => {
-      console.error("Error:", error);
-    });
+    this.listAllAvailableMailTemplates(
+      (list) => {
+        this.availableMailTemplates = list;
+      },
+      (error) => {
+        console.error("Error:", error);
+      }
+    );
   }
 
   componentDidMount() {
+    this.loadGeofencingLayers();
     this.loadEditableLayers();
     let tool = this.getTool();
     const layersUrl =
@@ -75,6 +85,7 @@ class ToolOptions extends Component {
     if (tool) {
       this.setState(
         {
+          selectedGeofencingLayer: tool.options.selectedGeofencingLayer,
           active: true,
           index: tool.index,
           target: tool.options.target || "toolbar",
@@ -110,6 +121,55 @@ class ToolOptions extends Component {
         });
       });
     }
+  }
+
+  getLayersFromGroupsAndBaselayers(options) {
+    const layers = [];
+
+    function collectLayersFromGroup(group) {
+      if (group.layers) {
+        layers.push(...group.layers);
+      }
+      if (group.groups) {
+        group.groups.forEach(collectLayersFromGroup);
+      }
+    }
+
+    if (options.groups) {
+      options.groups.forEach(collectLayersFromGroup);
+    }
+
+    if (options.baselayers) {
+      layers.push(...options.baselayers);
+    }
+
+    return layers;
+  }
+
+  loadGeofencingLayers() {
+    const mapConfig = this.props.model.get("layerMenuConfig");
+
+    if (!mapConfig) {
+      console.error("Map configuration could not be loaded.");
+      return;
+    }
+
+    const layerMenuConfigLayers =
+      this.getLayersFromGroupsAndBaselayers(mapConfig);
+
+    const allLayers = this.props.model.get("layers");
+
+    const comparedLayers = layerMenuConfigLayers
+      .filter((lsLayer) => allLayers.some((al) => al.id === lsLayer.id))
+      .map((lsLayer) => {
+        const realLayer = allLayers.find((al) => al.id === lsLayer.id);
+        return {
+          id: realLayer.id,
+          caption: realLayer.caption || "Okänt lager",
+        };
+      });
+
+    this.setState({ geofencingLayers: comparedLayers });
   }
 
   /**
@@ -207,7 +267,7 @@ class ToolOptions extends Component {
       }
     );
   }
-  
+
   loadEditableLayers() {
     this.props.model.getConfig(
       this.props.model.get("config").url_layers,
@@ -272,6 +332,7 @@ class ToolOptions extends Component {
       type: this.type,
       index: this.state.index,
       options: {
+        selectedGeofencingLayer: this.state.selectedGeofencingLayer,
         target: this.state.target,
         position: this.state.position,
         width: this.state.width,
@@ -425,6 +486,10 @@ class ToolOptions extends Component {
     });
   };
 
+  handleChangeGeofencingLayer = (event) => {
+    this.setState({ selectedGeofencingLayer: event.target.value });
+  };
+
   handleChangeMail = (event) => {
     this.setState({
       selectedMailTemplate: event.target.value,
@@ -560,39 +625,39 @@ class ToolOptions extends Component {
             />
           </div>
           <div>
-          <label htmlFor="title">
-                    Rubrik
-                    <br />
-                    (Widget Plugin)
-                  </label>
-                  <input
-                    value={this.state.title}
-                    type="text"
-                    name="title"
-                    onChange={(e) => {
-                      this.handleInputChange(e);
-                    }}
-                  />
+            <label htmlFor="title">
+              Rubrik
+              <br />
+              (Widget Plugin)
+            </label>
+            <input
+              value={this.state.title}
+              type="text"
+              name="title"
+              onChange={(e) => {
+                this.handleInputChange(e);
+              }}
+            />
           </div>
           <div>
-          <label htmlFor="description">
-                    Beskrivning
-                    <br />
-                    (Widget Plugin){" "}
-                    <i
-                      className="fa fa-question-circle"
-                      data-toggle="tooltip"
-                      title="Om verktyget visas som widget (inställningen 'Verktygsplacering' sätts till 'left' eller 'right) så kommer denna beskrivning att visas inne i widget-knappen."
-                    />
-                  </label>
-                  <input
-                    value={this.state.description}
-                    type="text"
-                    name="description"
-                    onChange={(e) => {
-                      this.handleInputChange(e);
-                    }}
-                  />
+            <label htmlFor="description">
+              Beskrivning
+              <br />
+              (Widget Plugin){" "}
+              <i
+                className="fa fa-question-circle"
+                data-toggle="tooltip"
+                title="Om verktyget visas som widget (inställningen 'Verktygsplacering' sätts till 'left' eller 'right) så kommer denna beskrivning att visas inne i widget-knappen."
+              />
+            </label>
+            <input
+              value={this.state.description}
+              type="text"
+              name="description"
+              onChange={(e) => {
+                this.handleInputChange(e);
+              }}
+            />
           </div>
           <div className="separator">Övriga inställningar</div>
           <div>
@@ -619,81 +684,110 @@ class ToolOptions extends Component {
               checked={this.state.visibleAtStartMobile}
             />
             &nbsp;
-            <label htmlFor="visibleAtStartMobile">Synlig vid start(mobil)</label>
+            <label htmlFor="visibleAtStartMobile">
+              Synlig vid start(mobil)
+            </label>
           </div>
           <div>
-        <label>Välj enkät:</label>
-        <Select
-          labelId="select-survey"
-          id="simple-select-survey"
-          value={this.availableSurveys && this.availableSurveys.length > 0 ? this.state.selectedSurvey : ''}
-          onChange={this.handleChange}
-        >
-          <MenuItem value="">
-            <em>Inget valt</em>
-          </MenuItem>
-          {this.availableSurveys && this.availableSurveys.map((surveyName, index) => (
-          <MenuItem key={index} value={surveyName}>
-            {surveyName}
-          </MenuItem>
-          ))}
-        </Select>
-      </div>
-      <div>
-        <label>Välj mall för mail:</label>
-        <Select
-          labelId="select-mailtemplate"
-          id="simple-select-mailtemplate"
-          value={this.availableMailTemplates && this.availableMailTemplates.length > 0 ? this.state.selectedMailTemplate : ''}
-          onChange={this.handleChangeMail}
-        >
-          <MenuItem value="">
-            <em>Inget valt</em>
-          </MenuItem>
-          {this.availableMailTemplates && this.availableMailTemplates.map((mailTemplateName, index) => (
-          <MenuItem key={index} value={mailTemplateName}>
-            {mailTemplateName}
-          </MenuItem>
-          ))}
-        </Select>
-      </div>
-      <div>
-          <label htmlFor="responseMessage">
-                    Svarsmeddelande vid slutförd enkät
-                    {" "}
-                    <i
-                      className="fa fa-question-circle"
-                      data-toggle="tooltip"
-                      title="Går att använda med eller utan HTML. Om du skriver utan HTML så skapas en stil automatiskt. Du kan även använda radbrytning utan HTML"
-                    />
-                  </label>
-                  <textarea
-                    value={this.state.responseMessage}
-                    type="text"
-                    name="responseMessage"
-                    onChange={(e) => {
-                      this.handleInputChange(e);
-                    }}
-                  />
+            <label>Välj enkät:</label>
+            <Select
+              labelId="select-survey"
+              id="simple-select-survey"
+              value={
+                this.availableSurveys && this.availableSurveys.length > 0
+                  ? this.state.selectedSurvey
+                  : ""
+              }
+              onChange={this.handleChange}
+            >
+              <MenuItem value="">
+                <em>Inget valt</em>
+              </MenuItem>
+              {this.availableSurveys &&
+                this.availableSurveys.map((surveyName, index) => (
+                  <MenuItem key={index} value={surveyName}>
+                    {surveyName}
+                  </MenuItem>
+                ))}
+            </Select>
           </div>
           <div>
-          <label htmlFor="restartButtonText">
-                    Text på knapp vid starta en ny enkät
-                    {" "}
-                    <i
-                      className="fa fa-question-circle"
-                      data-toggle="tooltip"
-                      title="Lämna denna tom om du inte vill ha en knapp för att starta en ny enkät"
-                    />
-                  </label>
-                  <input
-                    value={this.state.restartButtonText}
-                    type="text"
-                    name="restartButtonText"
-                    onChange={(e) => {
-                      this.handleInputChange(e);
-                    }}
-                  />
+            <label>Välj geofencinglager:</label>
+            <Select
+              labelId="select-geofencinglayer"
+              id="simple-select-geofencinglayer"
+              value={this.state.selectedGeofencingLayer || ""}
+              onChange={this.handleChangeGeofencingLayer}
+            >
+              <MenuItem value="">
+                <em>Inget valt</em>
+              </MenuItem>
+              {this.state.geofencingLayers.map((layer) => (
+                <MenuItem key={layer.id} value={layer.id}>
+                  {layer.caption}
+                </MenuItem>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label>Välj mall för mail:</label>
+            <Select
+              labelId="select-mailtemplate"
+              id="simple-select-mailtemplate"
+              value={
+                this.availableMailTemplates &&
+                this.availableMailTemplates.length > 0
+                  ? this.state.selectedMailTemplate
+                  : ""
+              }
+              onChange={this.handleChangeMail}
+            >
+              <MenuItem value="">
+                <em>Inget valt</em>
+              </MenuItem>
+              {this.availableMailTemplates &&
+                this.availableMailTemplates.map((mailTemplateName, index) => (
+                  <MenuItem key={index} value={mailTemplateName}>
+                    {mailTemplateName}
+                  </MenuItem>
+                ))}
+            </Select>
+          </div>
+          <div>
+            <label htmlFor="responseMessage">
+              Svarsmeddelande vid slutförd enkät{" "}
+              <i
+                className="fa fa-question-circle"
+                data-toggle="tooltip"
+                title="Går att använda med eller utan HTML. Om du skriver utan HTML så skapas en stil automatiskt. Du kan även använda radbrytning utan HTML"
+              />
+            </label>
+            <textarea
+              value={this.state.responseMessage}
+              type="text"
+              name="responseMessage"
+              onChange={(e) => {
+                this.handleInputChange(e);
+              }}
+            />
+          </div>
+          <div>
+            <label htmlFor="restartButtonText">
+              Text på knapp vid starta en ny enkät{" "}
+              <i
+                className="fa fa-question-circle"
+                data-toggle="tooltip"
+                title="Lämna denna tom om du inte vill ha en knapp för att starta en ny enkät"
+              />
+            </label>
+            <input
+              value={this.state.restartButtonText}
+              type="text"
+              name="restartButtonText"
+              onChange={(e) => {
+                this.handleInputChange(e);
+              }}
+            />
           </div>
           <div>
             <label htmlFor="instruction">
