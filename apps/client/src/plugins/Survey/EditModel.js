@@ -143,6 +143,19 @@ class EditModel {
               });
             }
 
+            // Retrieve the polygon layer (e.g., via a "title" property)
+            // 1. Get the LayerGroup from the map
+            const layerGroup = this.map.getLayerGroup();
+
+            // 2. Get an array of all layers in the LayerGroup
+            const layersArray = layerGroup.getLayers().getArray();
+
+            // 3. Find the specific layer with the caption "boundary"
+            const boundaryLayer = layersArray.find(
+              (layer) =>
+                layer.get("name") === this.options.selectedGeofencingLayer
+            );
+
             feature.modification = "added";
 
             this.vectorSource.addFeature(feature);
@@ -151,6 +164,48 @@ class EditModel {
 
             this.observer.publish("deactivateEditInteraction");
             this.observer.publish("showSnackbar", "Geometri tillagd");
+
+            // Convert the newly drawn geometry to GeoJSON (for Turf)
+            const geoJsonFormat = new GeoJSON();
+            const drawnGeoJSON = geoJsonFormat.writeFeatureObject(feature);
+
+            try {
+              // If we found the polygon layer: check if the drawn geometry is within it
+              if (boundaryLayer) {
+                const boundaryFeatures = boundaryLayer
+                  .getSource()
+                  .getFeatures();
+                let isInsideAnyPolygon = false;
+
+                // Check against each polygon in the layer
+                boundaryFeatures.forEach((boundaryFeature) => {
+                  const boundaryGeoJSON =
+                    geoJsonFormat.writeFeatureObject(boundaryFeature);
+
+                  // booleanWithin returns true if the entire drawnGeoJSON is within boundaryGeoJSON
+                  if (booleanWithin(drawnGeoJSON, boundaryGeoJSON)) {
+                    isInsideAnyPolygon = true;
+                  }
+                });
+
+                if (isInsideAnyPolygon) {
+                  console.log(
+                    "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
+                  );
+                } else {
+                  console.log(
+                    "Den ritade geometrin ligger utanför polygonlagret."
+                  );
+                }
+              } else {
+                console.warn("Hittade inget polygonlager med rätt id.");
+              }
+            } catch (error) {
+              console.error(
+                "Ett fel uppstod när geometrin kontrollerades:",
+                error
+              );
+            }
 
             const isMobile = window.innerWidth <= 768;
             if (isMobile) {
