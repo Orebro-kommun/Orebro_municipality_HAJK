@@ -105,6 +105,23 @@ function SurveyView(props) {
   const [isCompleted, setIsCompleted] = useState(false);
   const [surveyKey, setSurveyKey] = useState(0);
 
+  // Used for areacalculations
+  const [area, setArea] = useState(0);
+
+  useEffect(() => {
+    // showArea localObserver
+    const unsubscribe = localObserver.subscribe("showArea", (polygonArea) => {
+      setArea(polygonArea);
+    });
+
+    // Cleanup-funktion
+    return () => {
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, [localObserver]);
+
   // Checks if responseMessage contains html
   const containsHTML = (str) => /<\/?[a-z][\s\S]*>/i.test(str);
   const messageContainsHTML = containsHTML(responseMessage);
@@ -357,6 +374,7 @@ function SurveyView(props) {
               onSaveCallback={handleOnComplete}
               ref={editViewRef}
               toolbarOptions={showEditView.toolbarOptions}
+              area={area}
             />
           );
         }
@@ -378,6 +396,7 @@ function SurveyView(props) {
               onSaveCallback={handleOnComplete}
               ref={editViewRef}
               toolbarOptions={showEditView.toolbarOptions}
+              area={area}
             />
           );
         }
@@ -396,6 +415,7 @@ function SurveyView(props) {
     handleOnComplete,
     editViewRef,
     showEditView.toolbarOptions,
+    area,
   ]);
 
   useEffect(() => {

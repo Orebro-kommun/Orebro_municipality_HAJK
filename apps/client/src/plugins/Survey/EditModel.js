@@ -13,6 +13,7 @@ import Feature from "ol/Feature";
 import proj4 from "proj4";
 import Point from "ol/geom/Point";
 import booleanWithin from "@turf/boolean-within";
+import area from "@turf/area";
 
 class EditModel {
   constructor(settings) {
@@ -891,6 +892,9 @@ class EditModel {
       feature.setStyle(this.getHiddenStyle());
     });
 
+    const wgs84 = "EPSG:4326";
+    const projection = this.map.getView().getProjection().getCode();
+
     // Retrieve the polygon layer (e.g., via a "title" property)
     // 1. Get the LayerGroup from the map
     const layerGroup = this.map.getLayerGroup();
@@ -922,6 +926,16 @@ class EditModel {
 
       // Convert the newly drawn geometry to GeoJSON (for Turf)
       const geoJsonFormat = new GeoJSON();
+
+      const geometry = event.feature.getGeometry().clone();
+      geometry.transform(projection, wgs84);
+      const drawnGeoJSONTransformed =
+        geoJsonFormat.writeGeometryObject(geometry);
+      const polygonArea = area(drawnGeoJSONTransformed);
+      if (polygonArea > 0) {
+        this.observer.publish("showArea", polygonArea);
+      }
+
       const drawnGeoJSON = geoJsonFormat.writeFeatureObject(event.feature);
 
       try {
