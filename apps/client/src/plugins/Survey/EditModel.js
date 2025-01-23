@@ -895,7 +895,7 @@ class EditModel {
     const wgs84 = "EPSG:4326";
     const projection = this.map.getView().getProjection().getCode();
 
-    // Retrieve the polygon layer (e.g., via a "title" property)
+    // Retrieve the polygon layer (e.g., via a "name" property)
     // 1. Get the LayerGroup from the map
     const layerGroup = this.map.getLayerGroup();
 
