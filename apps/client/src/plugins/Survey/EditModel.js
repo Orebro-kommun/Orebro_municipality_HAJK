@@ -111,14 +111,9 @@ class EditModel {
             });
 
             const wgs84 = "EPSG:4326";
-            const sweref99tm = this.map.getView().getProjection().getCode();
+            const projTarget = this.map.getView().getProjection().getCode();
 
-            proj4.defs(
-              sweref99tm,
-              "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs"
-            );
-
-            const [x, y] = proj4(wgs84, sweref99tm, [longitude, latitude]);
+            const [x, y] = proj4(wgs84, projTarget, [longitude, latitude]);
 
             const pointGeometry = new Point([x, y]);
 
