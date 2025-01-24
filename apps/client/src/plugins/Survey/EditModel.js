@@ -890,6 +890,7 @@ class EditModel {
     this.vectorSource.getFeatures().forEach((feature) => {
       feature.modification = "removed";
       feature.setStyle(this.getHiddenStyle());
+      this.observer.publish("showArea", 0);
     });
 
     const wgs84 = "EPSG:4326";

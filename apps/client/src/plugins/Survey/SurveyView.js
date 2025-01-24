@@ -150,6 +150,8 @@ function SurveyView(props) {
     let newSurveyAnswerId = generateUniqueID();
     setIsCompleted(false);
 
+    setArea(0);
+
     setSurveyJsData((prevSurveyJsData) => ({
       ...prevSurveyJsData,
       surveyAnswerId: newSurveyAnswerId,
