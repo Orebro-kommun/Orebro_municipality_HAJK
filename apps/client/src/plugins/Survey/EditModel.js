@@ -10,10 +10,10 @@ import X2JS from "x2js";
 import { hfetch } from "utils/FetchWrapper";
 import WKT from "ol/format/WKT";
 import Feature from "ol/Feature";
-import proj4 from "proj4";
 import Point from "ol/geom/Point";
 import booleanWithin from "@turf/boolean-within";
 import area from "@turf/area";
+import { transform } from "ol/proj";
 
 class EditModel {
   constructor(settings) {
@@ -111,12 +111,16 @@ class EditModel {
               feature.setStyle(this.getHiddenStyle());
             });
 
-            const wgs84 = "EPSG:4326";
-            const projTarget = this.map.getView().getProjection().getCode();
+            const wgs84Coords = [longitude, latitude];
 
-            const [x, y] = proj4(wgs84, projTarget, [longitude, latitude]);
+            const mapProjection = this.map.getView().getProjection().getCode();
+            const projectedCoords = transform(
+              wgs84Coords, // [lon, lat]
+              "EPSG:4326", // source
+              mapProjection // target/destination
+            );
 
-            const pointGeometry = new Point([x, y]);
+            const pointGeometry = new Point(projectedCoords);
 
             let feature;
             if (this.source.id === "simulated") {
@@ -156,7 +160,7 @@ class EditModel {
 
             this.vectorSource.addFeature(feature);
 
-            this.pointString = `POINT(${x} ${y})`;
+            this.pointString = `POINT(${projectedCoords[0]} ${projectedCoords[1]})`;
 
             this.observer.publish("deactivateEditInteraction");
             this.observer.publish("showSnackbar", "Geometri tillagd");
