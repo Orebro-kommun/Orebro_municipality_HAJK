@@ -257,7 +257,9 @@ class Toolbar extends Component {
                 Markera ett område
                 <BorderStyleIcon sx={{ marginLeft: 1 }} />
               </StyledButton>
-              <p>Area i kvadratmeter: {this.props.area}</p>
+              <Typography>
+                <b>Area i kvadratmeter:</b> {this.props.area}
+              </Typography>
             </Grid>
           )}
         </Grid>

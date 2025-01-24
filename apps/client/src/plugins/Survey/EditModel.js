@@ -914,15 +914,10 @@ class EditModel {
       stopClick: true,
       geometryName: this.geometryName,
     });
+
     this.draw.on("drawend", (event) => {
       event.feature.modification = "added";
       this.editAttributes(event.feature);
-      // OpenLayers seems to have a problem stopping the clicks if
-      // the draw interaction is removed too early. This fix is not pretty,
-      // but it gets the job done. It seems to be enough to remove the draw
-      // interaction after one cpu-cycle.
-      // If this is not added, the user will get a zoom-event when closing
-      // a polygon drawing.
 
       // Convert the newly drawn geometry to GeoJSON (for Turf)
       const geoJsonFormat = new GeoJSON();
@@ -969,6 +964,12 @@ class EditModel {
         console.error("Ett fel uppstod när geometrin kontrollerades:", error);
       }
 
+      // OpenLayers seems to have a problem stopping the clicks if
+      // the draw interaction is removed too early. This fix is not pretty,
+      // but it gets the job done. It seems to be enough to remove the draw
+      // interaction after one cpu-cycle.
+      // If this is not added, the user will get a zoom-event when closing
+      // a polygon drawing.
       setTimeout(() => {
         this.deactivateInteraction();
         this.observer.publish("deactivateEditInteraction");
