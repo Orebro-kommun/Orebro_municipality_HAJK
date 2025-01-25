@@ -262,6 +262,7 @@ class EditView extends React.PureComponent {
         toggleActiveTool={(toolName) => this.toggleActiveTool(toolName)}
         toolbarOptions={this.props.toolbarOptions}
         area={this.props.area}
+        price={this.props.price}
       />
     );
   };

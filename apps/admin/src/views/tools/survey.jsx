@@ -7,6 +7,7 @@ import { withStyles } from "@material-ui/core/styles";
 import { blue } from "@material-ui/core/colors";
 import Tree from "../treeEdit.jsx";
 import { Select, MenuItem } from "@material-ui/core";
+import SurveyLayerList from "views/components/SurveyLayerList.jsx";
 
 const ColorButtonBlue = withStyles((theme) => ({
   root: {
@@ -79,9 +80,7 @@ class ToolOptions extends Component {
     this.loadEditableLayers();
     let tool = this.getTool();
     const layersUrl =
-      this.props.model && this.props.model.get("config").url_layers
-        ? this.props.model.get("config").url_layers
-        : "";
+      this.props.model && this.props.model.get("config").url_layers ? this.props.model.get("config").url_layers : "";
     if (tool) {
       this.setState(
         {
@@ -102,8 +101,7 @@ class ToolOptions extends Component {
           selectedMailTemplate: tool.options.selectedMailTemplate,
           responseMessage: tool.options.responseMessage,
           restartButtonText: tool.options.restartButtonText,
-          visibleForGroups:
-            tool.options.visibleForGroups || this.state.visibleForGroups,
+          visibleForGroups: tool.options.visibleForGroups || this.state.visibleForGroups,
         },
         () => {
           this.loadLayers();
@@ -154,8 +152,7 @@ class ToolOptions extends Component {
       return;
     }
 
-    const layerMenuConfigLayers =
-      this.getLayersFromGroupsAndBaselayers(mapConfig);
+    const layerMenuConfigLayers = this.getLayersFromGroupsAndBaselayers(mapConfig);
 
     const allLayers = this.props.model.get("layers");
 
@@ -269,32 +266,27 @@ class ToolOptions extends Component {
   }
 
   loadEditableLayers() {
-    this.props.model.getConfig(
-      this.props.model.get("config").url_layers,
-      (layers) => {
-        this.setState({
-          editableLayers: layers.wfstlayers,
-        });
+    this.props.model.getConfig(this.props.model.get("config").url_layers, (layers) => {
+      this.setState({
+        editableLayers: layers.wfstlayers,
+      });
 
-        this.setState({
-          tree: (
-            <Tree
-              model={this}
-              activeServices={this.state.editableLayers}
-              handleAddEditableLayer={this.handleAddEditableLayer}
-              loadLayers={this.loadLayers}
-              authActive={this.props.parent.props.parent.state.authActive}
-            />
-          ),
-        });
-      }
-    );
+      this.setState({
+        tree: (
+          <Tree
+            model={this}
+            activeServices={this.state.editableLayers}
+            handleAddEditableLayer={this.handleAddEditableLayer}
+            loadLayers={this.loadLayers}
+            authActive={this.props.parent.props.parent.state.authActive}
+          />
+        ),
+      });
+    });
   }
 
   getTool() {
-    return this.props.model
-      .get("toolConfig")
-      .find((tool) => tool.type === this.type);
+    return this.props.model.get("toolConfig").find((tool) => tool.type === this.type);
   }
 
   add(tool) {
@@ -303,9 +295,7 @@ class ToolOptions extends Component {
 
   remove(tool) {
     this.props.model.set({
-      toolConfig: this.props.model
-        .get("toolConfig")
-        .filter((tool) => tool.type !== this.type),
+      toolConfig: this.props.model.get("toolConfig").filter((tool) => tool.type !== this.type),
     });
   }
 
@@ -347,25 +337,19 @@ class ToolOptions extends Component {
         selectedMailTemplate: this.state.selectedMailTemplate,
         responseMessage: this.state.responseMessage,
         restartButtonText: this.state.restartButtonText,
-        visibleForGroups: this.state.visibleForGroups.map(
-          Function.prototype.call,
-          String.prototype.trim
-        ),
+        visibleForGroups: this.state.visibleForGroups.map(Function.prototype.call, String.prototype.trim),
       },
     };
 
     const existing = this.getTool();
 
     function update() {
-      this.props.model.updateToolConfig(
-        this.props.model.get("toolConfig"),
-        () => {
-          this.props.parent.props.parent.setState({
-            alert: true,
-            alertMessage: "Uppdateringen lyckades",
-          });
-        }
-      );
+      this.props.model.updateToolConfig(this.props.model.get("toolConfig"), () => {
+        this.props.parent.props.parent.setState({
+          alert: true,
+          alertMessage: "Uppdateringen lyckades",
+        });
+      });
     }
 
     if (!this.state.active) {
@@ -449,9 +433,7 @@ class ToolOptions extends Component {
           activeServices: [...this.state.activeServices, toAdd],
         });
       } else {
-        let newArray = this.state.activeServices.filter(
-          (o) => o.id !== layer.id.toString()
-        );
+        let newArray = this.state.activeServices.filter((o) => o.id !== layer.id.toString());
 
         this.setState({
           activeServices: newArray,
@@ -459,12 +441,8 @@ class ToolOptions extends Component {
       }
     }
     if (e.target.type.toLowerCase() === "text") {
-      let obj = this.state.activeServices.find(
-        (o) => o.id === layer.id.toString()
-      );
-      let newArray = this.state.activeServices.filter(
-        (o) => o.id !== layer.id.toString()
-      );
+      let obj = this.state.activeServices.find((o) => o.id === layer.id.toString());
+      let newArray = this.state.activeServices.filter((o) => o.id !== layer.id.toString());
 
       // Creates array and trims whitespace from start and end
       if (typeof obj !== "undefined") {
@@ -500,6 +478,7 @@ class ToolOptions extends Component {
    *
    */
   render() {
+    const { geofencingLayers } = this.state;
     return (
       <div>
         <form>
@@ -684,20 +663,14 @@ class ToolOptions extends Component {
               checked={this.state.visibleAtStartMobile}
             />
             &nbsp;
-            <label htmlFor="visibleAtStartMobile">
-              Synlig vid start(mobil)
-            </label>
+            <label htmlFor="visibleAtStartMobile">Synlig vid start(mobil)</label>
           </div>
           <div>
             <label>Välj enkät:</label>
             <Select
               labelId="select-survey"
               id="simple-select-survey"
-              value={
-                this.availableSurveys && this.availableSurveys.length > 0
-                  ? this.state.selectedSurvey
-                  : ""
-              }
+              value={this.availableSurveys && this.availableSurveys.length > 0 ? this.state.selectedSurvey : ""}
               onChange={this.handleChange}
             >
               <MenuItem value="">
@@ -712,31 +685,12 @@ class ToolOptions extends Component {
             </Select>
           </div>
           <div>
-            <label>Välj geofencinglager:</label>
-            <Select
-              labelId="select-geofencinglayer"
-              id="simple-select-geofencinglayer"
-              value={this.state.selectedGeofencingLayer || ""}
-              onChange={this.handleChangeGeofencingLayer}
-            >
-              <MenuItem value="">
-                <em>Inget valt</em>
-              </MenuItem>
-              {this.state.geofencingLayers.map((layer) => (
-                <MenuItem key={layer.id} value={layer.id}>
-                  {layer.caption}
-                </MenuItem>
-              ))}
-            </Select>
-          </div>
-          <div>
             <label>Välj mall för mail:</label>
             <Select
               labelId="select-mailtemplate"
               id="simple-select-mailtemplate"
               value={
-                this.availableMailTemplates &&
-                this.availableMailTemplates.length > 0
+                this.availableMailTemplates && this.availableMailTemplates.length > 0
                   ? this.state.selectedMailTemplate
                   : ""
               }
@@ -809,6 +763,14 @@ class ToolOptions extends Component {
             />
           </div>
           <div>{this.renderVisibleForGroups()}</div>
+          <div>
+            <div className="separator">Geofencinglager</div>
+            <SurveyLayerList
+              allLayers={geofencingLayers}
+              chosenLayers={this.state.selectedGeofencingLayer}
+              onChosenLayersChange={(updatedLayerId) => this.setState({ selectedGeofencingLayer: updatedLayerId })}
+            />
+          </div>
           <div>
             <div className="separator">Redigeringstjänster</div>
             {this.state.tree}

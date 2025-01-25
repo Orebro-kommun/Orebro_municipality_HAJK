@@ -257,8 +257,9 @@ class Toolbar extends Component {
                 Markera ett område
                 <BorderStyleIcon sx={{ marginLeft: 1 }} />
               </StyledButton>
-              <Typography>
-                <b>Area i kvadratmeter:</b> {this.props.area}
+              <Typography style={{ fontSize: "12px", lineHeight: "1.4" }}>
+                <b>Area i kvm:</b> {this.props.area} <br />
+                <b>Pris:</b> {this.props.price} SEK
               </Typography>
             </Grid>
           )}

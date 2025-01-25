@@ -11,7 +11,8 @@ import { hfetch } from "utils/FetchWrapper";
 import WKT from "ol/format/WKT";
 import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
-import booleanWithin from "@turf/boolean-within";
+import { booleanWithin } from "@turf/boolean-within";
+import { booleanIntersects } from "@turf/boolean-intersects";
 import area from "@turf/area";
 import { transform } from "ol/proj";
 
@@ -170,31 +171,49 @@ class EditModel {
             const drawnGeoJSON = geoJsonFormat.writeFeatureObject(feature);
 
             try {
-              // If we found the polygon layer: check if the drawn geometry is within it
               if (boundaryLayer) {
                 const boundaryFeatures = boundaryLayer
                   .getSource()
                   .getFeatures();
                 let isInsideAnyPolygon = false;
+                let isCrossingAnyPolygon = false;
 
-                // Check against each polygon in the layer
                 boundaryFeatures.forEach((boundaryFeature) => {
                   const boundaryGeoJSON =
                     geoJsonFormat.writeFeatureObject(boundaryFeature);
 
-                  // booleanWithin returns true if the entire drawnGeoJSON is within boundaryGeoJSON
-                  if (booleanWithin(drawnGeoJSON, boundaryGeoJSON)) {
-                    isInsideAnyPolygon = true;
+                  // Perform booleanWithin and booleanIntersects
+                  try {
+                    const within = booleanWithin(drawnGeoJSON, boundaryGeoJSON);
+                    const intersects = booleanIntersects(
+                      drawnGeoJSON,
+                      boundaryGeoJSON
+                    );
+
+                    if (within) {
+                      isInsideAnyPolygon = true;
+                    }
+
+                    if (intersects) {
+                      isCrossingAnyPolygon = true;
+                    }
+                  } catch (error) {
+                    console.error("Error i boolean funktioner:", error);
                   }
                 });
 
-                if (isInsideAnyPolygon) {
+                // Combine result and print to console
+                if (isInsideAnyPolygon && isCrossingAnyPolygon) {
                   console.log(
                     "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
                   );
-                } else {
+                } else if (!isInsideAnyPolygon && isCrossingAnyPolygon) {
                   console.log(
-                    "Den ritade geometrin ligger utanför polygonlagret."
+                    "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
+                  );
+                } else if (!isInsideAnyPolygon && !isCrossingAnyPolygon) {
+                  console.log(
+                    "Den ritade geometrin ligger inte innanför polygonerna."
                   );
                 }
               } else {
@@ -933,34 +952,54 @@ class EditModel {
         geoJsonFormat.writeGeometryObject(geometry);
       const polygonArea = area(drawnGeoJSONTransformed);
       if (polygonArea > 0) {
-        this.observer.publish("showArea", polygonArea);
+        this.observer.publish("showArea", polygonArea.toFixed(2));
       }
 
       const drawnGeoJSON = geoJsonFormat.writeFeatureObject(event.feature);
 
       try {
-        // If we found the polygon layer: check if the drawn geometry is within it
         if (boundaryLayer) {
           const boundaryFeatures = boundaryLayer.getSource().getFeatures();
           let isInsideAnyPolygon = false;
+          let isCrossingAnyPolygon = false;
 
-          // Check against each polygon in the layer
           boundaryFeatures.forEach((boundaryFeature) => {
             const boundaryGeoJSON =
               geoJsonFormat.writeFeatureObject(boundaryFeature);
 
-            // booleanWithin returns true if the entire drawnGeoJSON is within boundaryGeoJSON
-            if (booleanWithin(drawnGeoJSON, boundaryGeoJSON)) {
-              isInsideAnyPolygon = true;
+            // Perform booleanWithin and booleanIntersects
+            try {
+              const within = booleanWithin(drawnGeoJSON, boundaryGeoJSON);
+              const intersects = booleanIntersects(
+                drawnGeoJSON,
+                boundaryGeoJSON
+              );
+
+              if (within) {
+                isInsideAnyPolygon = true;
+              }
+
+              if (intersects) {
+                isCrossingAnyPolygon = true;
+              }
+            } catch (error) {
+              console.error("Error i boolean funktioner:", error);
             }
           });
 
-          if (isInsideAnyPolygon) {
+          // Combine result and print to console
+          if (isInsideAnyPolygon && isCrossingAnyPolygon) {
             console.log(
               "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
             );
-          } else {
-            console.log("Den ritade geometrin ligger utanför polygonlagret.");
+          } else if (!isInsideAnyPolygon && isCrossingAnyPolygon) {
+            console.log(
+              "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
+            );
+          } else if (!isInsideAnyPolygon && !isCrossingAnyPolygon) {
+            console.log(
+              "Den ritade geometrin ligger inte innanför polygonerna."
+            );
           }
         } else {
           console.warn("Hittade inget polygonlager med rätt id.");
