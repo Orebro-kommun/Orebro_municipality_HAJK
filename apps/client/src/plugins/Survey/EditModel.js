@@ -144,19 +144,6 @@ class EditModel {
               });
             }
 
-            // Retrieve the polygon layer (e.g., via a "title" property)
-            // 1. Get the LayerGroup from the map
-            const layerGroup = this.map.getLayerGroup();
-
-            // 2. Get an array of all layers in the LayerGroup
-            const layersArray = layerGroup.getLayers().getArray();
-
-            // 3. Find the specific layer with the caption "boundary"
-            const boundaryLayer = layersArray.find(
-              (layer) =>
-                layer.get("name") === this.options.selectedGeofencingLayer
-            );
-
             feature.modification = "added";
 
             this.vectorSource.addFeature(feature);
@@ -164,66 +151,98 @@ class EditModel {
             this.pointString = `POINT(${projectedCoords[0]} ${projectedCoords[1]})`;
 
             this.observer.publish("deactivateEditInteraction");
-            this.observer.publish("showSnackbar", "Geometri tillagd");
 
             // Convert the newly drawn geometry to GeoJSON (for Turf)
             const geoJsonFormat = new GeoJSON();
             const drawnGeoJSON = geoJsonFormat.writeFeatureObject(feature);
 
             try {
-              if (boundaryLayer) {
-                const boundaryFeatures = boundaryLayer
-                  .getSource()
-                  .getFeatures();
-                let isInsideAnyPolygon = false;
-                let isCrossingAnyPolygon = false;
+              if (this.options.activateGeofencingLayer) {
+                // Retrieve the polygon layer (e.g., via a "name" property)
+                // 1. Get the LayerGroup from the map
+                const layerGroup = this.map.getLayerGroup();
 
-                boundaryFeatures.forEach((boundaryFeature) => {
-                  const boundaryGeoJSON =
-                    geoJsonFormat.writeFeatureObject(boundaryFeature);
+                // 2. Get an array of all layers in the LayerGroup
+                const layersArray = layerGroup.getLayers().getArray();
 
-                  // Perform booleanWithin and booleanIntersects
-                  try {
-                    const within = booleanWithin(drawnGeoJSON, boundaryGeoJSON);
-                    const intersects = booleanIntersects(
-                      drawnGeoJSON,
-                      boundaryGeoJSON
+                // 3. Find the specific layer with the caption "boundary"
+                const boundaryLayer = layersArray.find(
+                  (layer) =>
+                    layer.get("name") === this.options.selectedGeofencingLayer
+                );
+
+                if (boundaryLayer) {
+                  const boundaryFeatures = boundaryLayer
+                    .getSource()
+                    .getFeatures();
+                  let isInsideAnyPolygon = false;
+                  let isCrossingAnyPolygon = false;
+
+                  boundaryFeatures.forEach((boundaryFeature) => {
+                    const boundaryGeoJSON =
+                      geoJsonFormat.writeFeatureObject(boundaryFeature);
+
+                    // Perform booleanWithin and booleanIntersects
+                    try {
+                      const within = booleanWithin(
+                        drawnGeoJSON,
+                        boundaryGeoJSON
+                      );
+                      const intersects = booleanIntersects(
+                        drawnGeoJSON,
+                        boundaryGeoJSON
+                      );
+
+                      if (within) {
+                        isInsideAnyPolygon = true;
+                      }
+
+                      if (intersects) {
+                        isCrossingAnyPolygon = true;
+                      }
+                    } catch (error) {
+                      console.error("Error i boolean funktioner:", error);
+                    }
+                  });
+
+                  // Combine result and print to console
+                  if (isInsideAnyPolygon && isCrossingAnyPolygon) {
+                    this.observer.publish("showSnackbar", "Geometri tillagd");
+                    console.log(
+                      "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
                     );
-
-                    if (within) {
-                      isInsideAnyPolygon = true;
-                    }
-
-                    if (intersects) {
-                      isCrossingAnyPolygon = true;
-                    }
-                  } catch (error) {
-                    console.error("Error i boolean funktioner:", error);
+                  } else if (!isInsideAnyPolygon && isCrossingAnyPolygon) {
+                    this.observer.publish("showSnackbar", "Geometri tillagd");
+                    console.log(
+                      "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
+                    );
+                  } else if (!isInsideAnyPolygon && !isCrossingAnyPolygon) {
+                    this.observer.publish(
+                      "GeofencingWarning",
+                      "Geometri utanför område, vänligen försök igen!"
+                    );
+                    this.vectorSource.getFeatures().forEach((feature) => {
+                      feature.modification = "removed";
+                      feature.setStyle(this.getHiddenStyle());
+                      this.observer.publish("showArea", 0);
+                    });
+                    console.log(
+                      "Den ritade geometrin ligger inte innanför polygonerna."
+                    );
                   }
-                });
-
-                // Combine result and print to console
-                if (isInsideAnyPolygon && isCrossingAnyPolygon) {
-                  console.log(
-                    "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
-                  );
-                } else if (!isInsideAnyPolygon && isCrossingAnyPolygon) {
-                  console.log(
-                    "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
-                  );
-                } else if (!isInsideAnyPolygon && !isCrossingAnyPolygon) {
-                  console.log(
-                    "Den ritade geometrin ligger inte innanför polygonerna."
-                  );
+                } else {
+                  console.warn("Hittade inget polygonlager med rätt id.");
                 }
-              } else {
-                console.warn("Hittade inget polygonlager med rätt id.");
               }
             } catch (error) {
               console.error(
                 "Ett fel uppstod när geometrin kontrollerades:",
                 error
               );
+            }
+
+            if (!this.options.activateGeofencingLayer) {
+              this.observer.publish("showSnackbar", "Geometri tillagd");
             }
 
             const isMobile = window.innerWidth <= 768;
@@ -919,18 +938,6 @@ class EditModel {
     const wgs84 = "EPSG:4326";
     const projection = this.map.getView().getProjection().getCode();
 
-    // Retrieve the polygon layer (e.g., via a "name" property)
-    // 1. Get the LayerGroup from the map
-    const layerGroup = this.map.getLayerGroup();
-
-    // 2. Get an array of all layers in the LayerGroup
-    const layersArray = layerGroup.getLayers().getArray();
-
-    // 3. Find the specific layer with the caption "boundary"
-    const boundaryLayer = layersArray.find(
-      (layer) => layer.get("name") === this.options.selectedGeofencingLayer
-    );
-
     this.draw = new Draw({
       source: this.vectorSource,
       style: this.getSketchStyle(),
@@ -955,59 +962,6 @@ class EditModel {
         this.observer.publish("showArea", polygonArea.toFixed(2));
       }
 
-      const drawnGeoJSON = geoJsonFormat.writeFeatureObject(event.feature);
-
-      try {
-        if (boundaryLayer) {
-          const boundaryFeatures = boundaryLayer.getSource().getFeatures();
-          let isInsideAnyPolygon = false;
-          let isCrossingAnyPolygon = false;
-
-          boundaryFeatures.forEach((boundaryFeature) => {
-            const boundaryGeoJSON =
-              geoJsonFormat.writeFeatureObject(boundaryFeature);
-
-            // Perform booleanWithin and booleanIntersects
-            try {
-              const within = booleanWithin(drawnGeoJSON, boundaryGeoJSON);
-              const intersects = booleanIntersects(
-                drawnGeoJSON,
-                boundaryGeoJSON
-              );
-
-              if (within) {
-                isInsideAnyPolygon = true;
-              }
-
-              if (intersects) {
-                isCrossingAnyPolygon = true;
-              }
-            } catch (error) {
-              console.error("Error i boolean funktioner:", error);
-            }
-          });
-
-          // Combine result and print to console
-          if (isInsideAnyPolygon && isCrossingAnyPolygon) {
-            console.log(
-              "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
-            );
-          } else if (!isInsideAnyPolygon && isCrossingAnyPolygon) {
-            console.log(
-              "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
-            );
-          } else if (!isInsideAnyPolygon && !isCrossingAnyPolygon) {
-            console.log(
-              "Den ritade geometrin ligger inte innanför polygonerna."
-            );
-          }
-        } else {
-          console.warn("Hittade inget polygonlager med rätt id.");
-        }
-      } catch (error) {
-        console.error("Ett fel uppstod när geometrin kontrollerades:", error);
-      }
-
       // OpenLayers seems to have a problem stopping the clicks if
       // the draw interaction is removed too early. This fix is not pretty,
       // but it gets the job done. It seems to be enough to remove the draw
@@ -1017,7 +971,89 @@ class EditModel {
       setTimeout(() => {
         this.deactivateInteraction();
         this.observer.publish("deactivateEditInteraction");
-        this.observer.publish("showSnackbar", "Geometri tillagd");
+
+        const drawnGeoJSON = geoJsonFormat.writeFeatureObject(event.feature);
+
+        try {
+          if (this.options.activateGeofencingLayer) {
+            // Retrieve the polygon layer (e.g., via a "name" property)
+            // 1. Get the LayerGroup from the map
+            const layerGroup = this.map.getLayerGroup();
+
+            // 2. Get an array of all layers in the LayerGroup
+            const layersArray = layerGroup.getLayers().getArray();
+
+            // 3. Find the specific layer with the caption "boundary"
+            const boundaryLayer = layersArray.find(
+              (layer) =>
+                layer.get("name") === this.options.selectedGeofencingLayer
+            );
+
+            if (boundaryLayer) {
+              const boundaryFeatures = boundaryLayer.getSource().getFeatures();
+              let isInsideAnyPolygon = false;
+              let isCrossingAnyPolygon = false;
+
+              boundaryFeatures.forEach((boundaryFeature) => {
+                const boundaryGeoJSON =
+                  geoJsonFormat.writeFeatureObject(boundaryFeature);
+
+                // Perform booleanWithin and booleanIntersects
+                try {
+                  const within = booleanWithin(drawnGeoJSON, boundaryGeoJSON);
+                  const intersects = booleanIntersects(
+                    drawnGeoJSON,
+                    boundaryGeoJSON
+                  );
+
+                  if (within) {
+                    isInsideAnyPolygon = true;
+                  }
+
+                  if (intersects) {
+                    isCrossingAnyPolygon = true;
+                  }
+                } catch (error) {
+                  console.error("Error i boolean funktioner:", error);
+                }
+              });
+
+              // Combine result and print to console
+              if (isInsideAnyPolygon && isCrossingAnyPolygon) {
+                this.observer.publish("showSnackbar", "Geometri tillagd");
+                console.log(
+                  "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
+                );
+              } else if (!isInsideAnyPolygon && isCrossingAnyPolygon) {
+                this.observer.publish("showSnackbar", "Geometri tillagd");
+                console.log(
+                  "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
+                );
+              } else if (!isInsideAnyPolygon && !isCrossingAnyPolygon) {
+                this.observer.publish(
+                  "GeofencingWarning",
+                  "Geometri utanför område, vänligen försök igen!"
+                );
+                this.vectorSource.getFeatures().forEach((feature) => {
+                  feature.modification = "removed";
+                  feature.setStyle(this.getHiddenStyle());
+                  this.observer.publish("showArea", 0);
+                });
+                console.log(
+                  "Den ritade geometrin ligger inte innanför polygonerna."
+                );
+              }
+            } else {
+              console.warn("Hittade inget polygonlager med rätt id.");
+            }
+          }
+        } catch (error) {
+          console.error("Ett fel uppstod när geometrin kontrollerades:", error);
+        }
+
+        if (!this.options.activateGeofencingLayer) {
+          this.observer.publish("showSnackbar", "Geometri tillagd");
+        }
       }, 1);
 
       const isMobile = window.innerWidth <= 768;

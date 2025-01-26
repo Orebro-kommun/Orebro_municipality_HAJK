@@ -34,6 +34,10 @@ const defaultState = {
   selectedSurvey: "",
   selectedMailTemplate: "",
   selectedGeofencingLayer: "",
+  activateGeofencingLayer: false,
+  activatedMapOrder: false,
+  mapOrderPrice: 1068,
+  mapOrderBasePrice: 1068,
   responseMessage:
     '<div style="font-size: 25px; font-weight: bold;">Tack för att du svarade på våra frågor!</div>\n<div>Mera text...</div>',
   restartButtonText: "Vill du svara på enkäten en gång till? Klicka här!",
@@ -85,6 +89,7 @@ class ToolOptions extends Component {
       this.setState(
         {
           selectedGeofencingLayer: tool.options.selectedGeofencingLayer,
+          activateGeofencingLayer: tool.options.activateGeofencingLayer,
           active: true,
           index: tool.index,
           target: tool.options.target || "toolbar",
@@ -99,6 +104,9 @@ class ToolOptions extends Component {
           visibleAtStartMobile: tool.options.visibleAtStartMobile,
           selectedSurvey: tool.options.selectedSurvey,
           selectedMailTemplate: tool.options.selectedMailTemplate,
+          activatedMapOrder: tool.options.activatedMapOrder,
+          mapOrderPrice: tool.options.mapOrderPrice,
+          mapOrderBasePrice: tool.options.mapOrderBasePrice,
           responseMessage: tool.options.responseMessage,
           restartButtonText: tool.options.restartButtonText,
           visibleForGroups: tool.options.visibleForGroups || this.state.visibleForGroups,
@@ -323,6 +331,7 @@ class ToolOptions extends Component {
       index: this.state.index,
       options: {
         selectedGeofencingLayer: this.state.selectedGeofencingLayer,
+        activateGeofencingLayer: this.state.activateGeofencingLayer,
         target: this.state.target,
         position: this.state.position,
         width: this.state.width,
@@ -335,6 +344,9 @@ class ToolOptions extends Component {
         visibleAtStartMobile: this.state.visibleAtStartMobile,
         selectedSurvey: this.state.selectedSurvey,
         selectedMailTemplate: this.state.selectedMailTemplate,
+        activatedMapOrder: this.state.activatedMapOrder,
+        mapOrderPrice: this.state.mapOrderPrice,
+        mapOrderBasePrice: this.state.mapOrderBasePrice,
         responseMessage: this.state.responseMessage,
         restartButtonText: this.state.restartButtonText,
         visibleForGroups: this.state.visibleForGroups.map(Function.prototype.call, String.prototype.trim),
@@ -765,10 +777,63 @@ class ToolOptions extends Component {
           <div>{this.renderVisibleForGroups()}</div>
           <div>
             <div className="separator">Geofencinglager</div>
+            <input
+              id="activateGeofencingLayer"
+              name="activateGeofencingLayer"
+              type="checkbox"
+              onChange={(e) => {
+                this.handleInputChange(e);
+              }}
+              checked={this.state.activateGeofencingLayer}
+            />
+            &nbsp;
+            <label htmlFor="activateGeofencingLayer">Aktivera geofencinglager</label>
+          </div>
+          <div>
             <SurveyLayerList
               allLayers={geofencingLayers}
               chosenLayers={this.state.selectedGeofencingLayer}
               onChosenLayersChange={(updatedLayerId) => this.setState({ selectedGeofencingLayer: updatedLayerId })}
+            />
+          </div>
+          <div>
+            <div className="separator">Aktivering av kartbeställningsunderlag</div>
+            <input
+              id="activatedMapOrder"
+              name="activatedMapOrder"
+              type="checkbox"
+              onChange={(e) => {
+                this.handleInputChange(e);
+              }}
+              checked={this.state.activatedMapOrder}
+            />
+            &nbsp;
+            <label htmlFor="activatedMapOrder">Aktivera kartbeställningar</label>
+          </div>
+          <div>
+            <label htmlFor="mapOrderBasePrice">Pris för baskarta</label>
+            <input
+              id="mapOrderBasePrice"
+              name="mapOrderBasePrice"
+              type="number"
+              className="control-fixed-width"
+              onChange={(e) => {
+                this.handleInputChange(e);
+              }}
+              value={this.state.mapOrderBasePrice}
+            />
+          </div>
+          <div>
+            <label htmlFor="mapOrderPrice">Pris per Hektar</label>
+            <input
+              id="mapOrderPrice"
+              name="mapOrderPrice"
+              type="number"
+              className="control-fixed-width"
+              onChange={(e) => {
+                this.handleInputChange(e);
+              }}
+              value={this.state.mapOrderPrice}
             />
           </div>
           <div>

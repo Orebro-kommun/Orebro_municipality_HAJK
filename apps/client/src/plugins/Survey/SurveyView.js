@@ -113,7 +113,12 @@ function SurveyView(props) {
     // showArea localObserver
     const unsubscribe = localObserver.subscribe("showArea", (polygonArea) => {
       setArea(polygonArea);
-      setPrice(1068 + polygonArea * (1068 / 10000));
+      const areaInHa = polygonArea / 10000;
+      setPrice(
+        areaInHa <= 1
+          ? props.options.mapOrderBasePrice
+          : props.options.mapOrderPrice * areaInHa
+      );
     });
 
     // Cleanup-funktion
@@ -122,7 +127,13 @@ function SurveyView(props) {
         unsubscribe();
       }
     };
-  }, [localObserver, area, price]);
+  }, [
+    localObserver,
+    area,
+    price,
+    props.options.mapOrderBasePrice,
+    props.options.mapOrderPrice,
+  ]);
 
   // Checks if responseMessage contains html
   const containsHTML = (str) => /<\/?[a-z][\s\S]*>/i.test(str);
@@ -214,6 +225,24 @@ function SurveyView(props) {
     // Clean prenumeration
     return () => {
       localObserver.unsubscribe("showSnackbar", snackbarHandler);
+    };
+  }, [localObserver, enqueueSnackbar]);
+
+  React.useEffect(() => {
+    const snackbarHandler = (message) => {
+      enqueueSnackbar(message, { variant: "warning" });
+
+      // Check that editViewRef is defined first
+      if (editViewRef?.current?.onSaveClicked) {
+        editViewRef.current.onSaveClicked();
+      }
+    };
+
+    localObserver.subscribe("GeofencingWarning", snackbarHandler);
+
+    // Clean prenumeration
+    return () => {
+      localObserver.unsubscribe("GeofencingWarning", snackbarHandler);
     };
   }, [localObserver, enqueueSnackbar]);
 

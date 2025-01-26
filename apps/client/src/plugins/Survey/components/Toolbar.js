@@ -26,6 +26,10 @@ class Toolbar extends Component {
       editFeature: undefined,
     };
 
+    this.surveyTool = this.props.app.config.mapConfig.tools.find(
+      (tool) => tool.type === "survey"
+    );
+
     this.props.observer.subscribe("feature-to-update-view", (feature) => {
       this.setState({
         editFeature: feature,
@@ -257,10 +261,12 @@ class Toolbar extends Component {
                 Markera ett område
                 <BorderStyleIcon sx={{ marginLeft: 1 }} />
               </StyledButton>
-              <Typography style={{ fontSize: "12px", lineHeight: "1.4" }}>
-                <b>Area i kvm:</b> {this.props.area} <br />
-                <b>Pris:</b> {this.props.price} SEK
-              </Typography>
+              {this.surveyTool.options.activatedMapOrder && (
+                <Typography style={{ fontSize: "12px", lineHeight: "1.4" }}>
+                  <b>Area i kvm:</b> {this.props.area} <br />
+                  <b>Pris:</b> {this.props.price} SEK
+                </Typography>
+              )}
             </Grid>
           )}
         </Grid>
