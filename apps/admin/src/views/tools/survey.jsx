@@ -34,6 +34,7 @@ const defaultState = {
   selectedSurvey: "",
   selectedMailTemplate: "",
   selectedGeofencingLayer: "",
+  geofencingLayerType: "",
   activateGeofencingLayer: false,
   activatedMapOrder: false,
   mapOrderPrice: 1068,
@@ -90,6 +91,7 @@ class ToolOptions extends Component {
         {
           selectedGeofencingLayer: tool.options.selectedGeofencingLayer,
           activateGeofencingLayer: tool.options.activateGeofencingLayer,
+          geofencingLayerType: tool.options.geofencingLayerType,
           active: true,
           index: tool.index,
           target: tool.options.target || "toolbar",
@@ -332,6 +334,7 @@ class ToolOptions extends Component {
       options: {
         selectedGeofencingLayer: this.state.selectedGeofencingLayer,
         activateGeofencingLayer: this.state.activateGeofencingLayer,
+        geofencingLayerType: this.state.geofencingLayerType,
         target: this.state.target,
         position: this.state.position,
         width: this.state.width,
@@ -788,6 +791,22 @@ class ToolOptions extends Component {
             />
             &nbsp;
             <label htmlFor="activateGeofencingLayer">Aktivera geofencinglager</label>
+          </div>
+          <div>
+            <label htmlFor="geofencingLayerType">Välj lagertyp</label>&nbsp;
+            <Select
+              labelId="geofencingLayerType"
+              id="geofencingLayerType"
+              name="geofencingLayerType"
+              value={this.state.geofencingLayerType}
+              label="Service Typ"
+              onChange={(e) => {
+                this.handleInputChange(e);
+              }}
+            >
+              <MenuItem value="WMS">WMS</MenuItem>
+              <MenuItem value="WFS">WFS</MenuItem>
+            </Select>
           </div>
           <div>
             <SurveyLayerList

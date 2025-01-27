@@ -13,6 +13,7 @@ import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
 import { booleanWithin } from "@turf/boolean-within";
 import { booleanIntersects } from "@turf/boolean-intersects";
+import { centroid as turfCentroid } from "@turf/centroid";
 import area from "@turf/area";
 import { transform } from "ol/proj";
 
@@ -158,80 +159,206 @@ class EditModel {
 
             try {
               if (this.options.activateGeofencingLayer) {
-                // Retrieve the polygon layer (e.g., via a "name" property)
-                // 1. Get the LayerGroup from the map
+                // Retrieve the layer from the map's LayerGroup
                 const layerGroup = this.map.getLayerGroup();
-
-                // 2. Get an array of all layers in the LayerGroup
                 const layersArray = layerGroup.getLayers().getArray();
-
-                // 3. Find the specific layer with the caption "boundary"
                 const boundaryLayer = layersArray.find(
                   (layer) =>
                     layer.get("name") === this.options.selectedGeofencingLayer
                 );
 
                 if (boundaryLayer) {
-                  const boundaryFeatures = boundaryLayer
-                    .getSource()
-                    .getFeatures();
-                  let isInsideAnyPolygon = false;
-                  let isCrossingAnyPolygon = false;
+                  // Decide which logic to use based on layerType
+                  if (this.options.geofencingLayerType === "WFS") {
+                    // ========================================
+                    // ===========   WFS LOGIC   ===============
+                    // ========================================
+                    const boundarySource = boundaryLayer.getSource();
+                    const boundaryFeatures = boundarySource.getFeatures();
 
-                  boundaryFeatures.forEach((boundaryFeature) => {
-                    const boundaryGeoJSON =
-                      geoJsonFormat.writeFeatureObject(boundaryFeature);
+                    let isInsideAnyPolygon = false;
+                    let isCrossingAnyPolygon = false;
 
-                    // Perform booleanWithin and booleanIntersects
-                    try {
-                      const within = booleanWithin(
-                        drawnGeoJSON,
-                        boundaryGeoJSON
-                      );
-                      const intersects = booleanIntersects(
-                        drawnGeoJSON,
-                        boundaryGeoJSON
-                      );
+                    boundaryFeatures.forEach((boundaryFeature) => {
+                      const boundaryGeoJSON =
+                        geoJsonFormat.writeFeatureObject(boundaryFeature);
 
-                      if (within) {
-                        isInsideAnyPolygon = true;
+                      try {
+                        const within = booleanWithin(
+                          drawnGeoJSON,
+                          boundaryGeoJSON
+                        );
+                        const intersects = booleanIntersects(
+                          drawnGeoJSON,
+                          boundaryGeoJSON
+                        );
+
+                        if (within) {
+                          isInsideAnyPolygon = true;
+                        }
+                        if (intersects) {
+                          isCrossingAnyPolygon = true;
+                        }
+                      } catch (error) {
+                        console.error(
+                          "Error i boolean-funktioner (WFS):",
+                          error
+                        );
                       }
-
-                      if (intersects) {
-                        isCrossingAnyPolygon = true;
-                      }
-                    } catch (error) {
-                      console.error("Error i boolean funktioner:", error);
-                    }
-                  });
-
-                  // Combine result and print to console
-                  if (isInsideAnyPolygon && isCrossingAnyPolygon) {
-                    this.observer.publish("showSnackbar", "Geometri tillagd");
-                    console.log(
-                      "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
-                    );
-                  } else if (!isInsideAnyPolygon && isCrossingAnyPolygon) {
-                    this.observer.publish("showSnackbar", "Geometri tillagd");
-                    console.log(
-                      "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
-                    );
-                  } else if (!isInsideAnyPolygon && !isCrossingAnyPolygon) {
-                    this.observer.publish(
-                      "GeofencingWarning",
-                      "Geometri utanför område, vänligen försök igen!"
-                    );
-                    this.vectorSource.getFeatures().forEach((feature) => {
-                      feature.modification = "removed";
-                      feature.setStyle(this.getHiddenStyle());
-                      this.observer.publish("showArea", 0);
                     });
-                    console.log(
-                      "Den ritade geometrin ligger inte innanför polygonerna."
+
+                    if (
+                      (isInsideAnyPolygon && isCrossingAnyPolygon) ||
+                      (!isInsideAnyPolygon && isCrossingAnyPolygon)
+                    ) {
+                      this.observer.publish("showSnackbar", "Geometri tillagd");
+                      console.log(
+                        "Den ritade geometrin ligger innanför polygon (WFS)."
+                      );
+                    } else {
+                      this.observer.publish(
+                        "GeofencingWarning",
+                        "Geometri utanför område, vänligen försök igen!"
+                      );
+                      this.vectorSource.getFeatures().forEach((feature) => {
+                        feature.modification = "removed";
+                        feature.setStyle(this.getHiddenStyle());
+                        this.observer.publish("showArea", 0);
+                      });
+                      console.log(
+                        "Den ritade geometrin ligger inte innanför polygon (WFS)."
+                      );
+                    }
+                  } else if (this.options.geofencingLayerType === "WMS") {
+                    // ========================================
+                    // ===========   WMS LOGIC   ===============
+                    // ========================================
+                    const boundarySource = boundaryLayer.getSource();
+
+                    // For WMS GetFeatureInfo, we use a centroid as the "click point"
+                    const drawnCentroid = turfCentroid(drawnGeoJSON);
+                    const coordinate = drawnCentroid.geometry.coordinates;
+                    const viewResolution = this.map.getView().getResolution();
+                    const viewProjection = this.map.getView().getProjection();
+
+                    // Ensure the source supports getFeatureInfoUrl
+                    if (
+                      typeof boundarySource.getFeatureInfoUrl === "function"
+                    ) {
+                      const url = boundarySource.getFeatureInfoUrl(
+                        coordinate,
+                        viewResolution,
+                        viewProjection,
+                        {
+                          INFO_FORMAT: "application/json",
+                          FEATURE_COUNT: 50,
+                          WITH_GEOMETRY: "true",
+                        }
+                      );
+
+                      if (!url) {
+                        console.warn(
+                          "Kunde inte generera en getFeatureInfoUrl för WMS-lagret."
+                        );
+                      } else {
+                        fetch(url)
+                          .then((response) => response.json())
+                          .then((data) => {
+                            if (!data.features || data.features.length === 0) {
+                              // No features found → outside
+                              this.observer.publish(
+                                "GeofencingWarning",
+                                "Geometri utanför område, vänligen försök igen!"
+                              );
+                              this.vectorSource
+                                .getFeatures()
+                                .forEach((feature) => {
+                                  feature.modification = "removed";
+                                  feature.setStyle(this.getHiddenStyle());
+                                  this.observer.publish("showArea", 0);
+                                });
+                              console.log(
+                                "Den ritade geometrin ligger inte innanför polygon (WMS)."
+                              );
+                            } else {
+                              let isInsideAnyPolygon = false;
+                              let isCrossingAnyPolygon = false;
+
+                              data.features.forEach((wmsFeature) => {
+                                try {
+                                  const boundaryGeoJSON = wmsFeature;
+
+                                  const within = booleanWithin(
+                                    drawnGeoJSON,
+                                    boundaryGeoJSON
+                                  );
+                                  const intersects = booleanIntersects(
+                                    drawnGeoJSON,
+                                    boundaryGeoJSON
+                                  );
+
+                                  if (within) {
+                                    isInsideAnyPolygon = true;
+                                  }
+                                  if (intersects) {
+                                    isCrossingAnyPolygon = true;
+                                  }
+                                } catch (err) {
+                                  console.error(
+                                    "Fel när vi kollade WMS-feature:",
+                                    err
+                                  );
+                                }
+                              });
+
+                              if (
+                                (isInsideAnyPolygon && isCrossingAnyPolygon) ||
+                                (!isInsideAnyPolygon && isCrossingAnyPolygon)
+                              ) {
+                                this.observer.publish(
+                                  "showSnackbar",
+                                  "Geometri tillagd"
+                                );
+                                console.log(
+                                  "Den ritade geometrin ligger innanför polygon (WMS)."
+                                );
+                              } else {
+                                this.observer.publish(
+                                  "GeofencingWarning",
+                                  "Geometri utanför område, vänligen försök igen!"
+                                );
+                                this.vectorSource
+                                  .getFeatures()
+                                  .forEach((feature) => {
+                                    feature.modification = "removed";
+                                    feature.setStyle(this.getHiddenStyle());
+                                    this.observer.publish("showArea", 0);
+                                  });
+                                console.log(
+                                  "Den ritade geometrin ligger inte innanför polygon (WMS)."
+                                );
+                              }
+                            }
+                          })
+                          .catch((error) => {
+                            console.error(
+                              "Ett fel uppstod i GetFeatureInfo (WMS):",
+                              error
+                            );
+                          });
+                      }
+                    } else {
+                      console.warn(
+                        "boundarySource saknar getFeatureInfoUrl (WMS)."
+                      );
+                    }
+                  } else {
+                    console.warn(
+                      "Okänd layerType. Ange 'WFS' eller 'WMS' i this.options.geofencingLayerType."
                     );
                   }
                 } else {
-                  console.warn("Hittade inget polygonlager med rätt id.");
+                  console.warn("Hittade inget polygonlager med rätt name.");
                 }
               }
             } catch (error) {
@@ -950,9 +1077,8 @@ class EditModel {
       event.feature.modification = "added";
       this.editAttributes(event.feature);
 
-      // Convert the newly drawn geometry to GeoJSON (for Turf)
+      // Convert geometry to WGS84 before calculating area
       const geoJsonFormat = new GeoJSON();
-
       const geometry = event.feature.getGeometry().clone();
       geometry.transform(projection, wgs84);
       const drawnGeoJSONTransformed =
@@ -972,85 +1098,209 @@ class EditModel {
         this.deactivateInteraction();
         this.observer.publish("deactivateEditInteraction");
 
+        // This is the GeoJSON in the map's projection
         const drawnGeoJSON = geoJsonFormat.writeFeatureObject(event.feature);
 
+        // Check if geofencing is enabled
         try {
           if (this.options.activateGeofencingLayer) {
-            // Retrieve the polygon layer (e.g., via a "name" property)
-            // 1. Get the LayerGroup from the map
+            // Retrieve the layer from the map's LayerGroup
             const layerGroup = this.map.getLayerGroup();
-
-            // 2. Get an array of all layers in the LayerGroup
             const layersArray = layerGroup.getLayers().getArray();
-
-            // 3. Find the specific layer with the caption "boundary"
             const boundaryLayer = layersArray.find(
               (layer) =>
                 layer.get("name") === this.options.selectedGeofencingLayer
             );
 
             if (boundaryLayer) {
-              const boundaryFeatures = boundaryLayer.getSource().getFeatures();
-              let isInsideAnyPolygon = false;
-              let isCrossingAnyPolygon = false;
+              // Decide which logic to use based on layerType
+              if (this.options.geofencingLayerType === "WFS") {
+                // ========================================
+                // ===========   WFS LOGIC   ===============
+                // ========================================
+                const boundarySource = boundaryLayer.getSource();
+                const boundaryFeatures = boundarySource.getFeatures();
 
-              boundaryFeatures.forEach((boundaryFeature) => {
-                const boundaryGeoJSON =
-                  geoJsonFormat.writeFeatureObject(boundaryFeature);
+                let isInsideAnyPolygon = false;
+                let isCrossingAnyPolygon = false;
 
-                // Perform booleanWithin and booleanIntersects
-                try {
-                  const within = booleanWithin(drawnGeoJSON, boundaryGeoJSON);
-                  const intersects = booleanIntersects(
-                    drawnGeoJSON,
-                    boundaryGeoJSON
+                boundaryFeatures.forEach((boundaryFeature) => {
+                  const boundaryGeoJSON =
+                    geoJsonFormat.writeFeatureObject(boundaryFeature);
+
+                  try {
+                    const within = booleanWithin(drawnGeoJSON, boundaryGeoJSON);
+                    const intersects = booleanIntersects(
+                      drawnGeoJSON,
+                      boundaryGeoJSON
+                    );
+
+                    if (within) {
+                      isInsideAnyPolygon = true;
+                    }
+                    if (intersects) {
+                      isCrossingAnyPolygon = true;
+                    }
+                  } catch (error) {
+                    console.error("Error i boolean-funktioner (WFS):", error);
+                  }
+                });
+
+                if (
+                  (isInsideAnyPolygon && isCrossingAnyPolygon) ||
+                  (!isInsideAnyPolygon && isCrossingAnyPolygon)
+                ) {
+                  this.observer.publish("showSnackbar", "Geometri tillagd");
+                  console.log(
+                    "Den ritade geometrin ligger innanför polygon (WFS)."
+                  );
+                } else {
+                  this.observer.publish(
+                    "GeofencingWarning",
+                    "Geometri utanför område, vänligen försök igen!"
+                  );
+                  this.vectorSource.getFeatures().forEach((feature) => {
+                    feature.modification = "removed";
+                    feature.setStyle(this.getHiddenStyle());
+                    this.observer.publish("showArea", 0);
+                  });
+                  console.log(
+                    "Den ritade geometrin ligger inte innanför polygon (WFS)."
+                  );
+                }
+              } else if (this.options.geofencingLayerType === "WMS") {
+                // ========================================
+                // ===========   WMS LOGIC   ===============
+                // ========================================
+                const boundarySource = boundaryLayer.getSource();
+
+                // For WMS GetFeatureInfo, we use a centroid as the "click point"
+                const drawnCentroid = turfCentroid(drawnGeoJSON);
+                const coordinate = drawnCentroid.geometry.coordinates;
+                const viewResolution = this.map.getView().getResolution();
+                const viewProjection = this.map.getView().getProjection();
+
+                // Ensure the source supports getFeatureInfoUrl
+                if (typeof boundarySource.getFeatureInfoUrl === "function") {
+                  const url = boundarySource.getFeatureInfoUrl(
+                    coordinate,
+                    viewResolution,
+                    viewProjection,
+                    {
+                      INFO_FORMAT: "application/json",
+                      FEATURE_COUNT: 50,
+                      WITH_GEOMETRY: "true",
+                    }
                   );
 
-                  if (within) {
-                    isInsideAnyPolygon = true;
-                  }
+                  if (!url) {
+                    console.warn(
+                      "Kunde inte generera en getFeatureInfoUrl för WMS-lagret."
+                    );
+                  } else {
+                    fetch(url)
+                      .then((response) => response.json())
+                      .then((data) => {
+                        if (!data.features || data.features.length === 0) {
+                          // No features found → outside
+                          this.observer.publish(
+                            "GeofencingWarning",
+                            "Geometri utanför område, vänligen försök igen!"
+                          );
+                          this.vectorSource.getFeatures().forEach((feature) => {
+                            feature.modification = "removed";
+                            feature.setStyle(this.getHiddenStyle());
+                            this.observer.publish("showArea", 0);
+                          });
+                          console.log(
+                            "Den ritade geometrin ligger inte innanför polygon (WMS)."
+                          );
+                        } else {
+                          let isInsideAnyPolygon = false;
+                          let isCrossingAnyPolygon = false;
 
-                  if (intersects) {
-                    isCrossingAnyPolygon = true;
+                          data.features.forEach((wmsFeature) => {
+                            try {
+                              const boundaryGeoJSON = wmsFeature;
+
+                              const within = booleanWithin(
+                                drawnGeoJSON,
+                                boundaryGeoJSON
+                              );
+                              const intersects = booleanIntersects(
+                                drawnGeoJSON,
+                                boundaryGeoJSON
+                              );
+
+                              if (within) {
+                                isInsideAnyPolygon = true;
+                              }
+                              if (intersects) {
+                                isCrossingAnyPolygon = true;
+                              }
+                            } catch (err) {
+                              console.error(
+                                "Fel när vi kollade WMS-feature:",
+                                err
+                              );
+                            }
+                          });
+
+                          if (
+                            (isInsideAnyPolygon && isCrossingAnyPolygon) ||
+                            (!isInsideAnyPolygon && isCrossingAnyPolygon)
+                          ) {
+                            this.observer.publish(
+                              "showSnackbar",
+                              "Geometri tillagd"
+                            );
+                            console.log(
+                              "Den ritade geometrin ligger innanför polygon (WMS)."
+                            );
+                          } else {
+                            this.observer.publish(
+                              "GeofencingWarning",
+                              "Geometri utanför område, vänligen försök igen!"
+                            );
+                            this.vectorSource
+                              .getFeatures()
+                              .forEach((feature) => {
+                                feature.modification = "removed";
+                                feature.setStyle(this.getHiddenStyle());
+                                this.observer.publish("showArea", 0);
+                              });
+                            console.log(
+                              "Den ritade geometrin ligger inte innanför polygon (WMS)."
+                            );
+                          }
+                        }
+                      })
+                      .catch((error) => {
+                        console.error(
+                          "Ett fel uppstod i GetFeatureInfo (WMS):",
+                          error
+                        );
+                      });
                   }
-                } catch (error) {
-                  console.error("Error i boolean funktioner:", error);
+                } else {
+                  console.warn(
+                    "boundarySource saknar getFeatureInfoUrl (WMS)."
+                  );
                 }
-              });
-
-              // Combine result and print to console
-              if (isInsideAnyPolygon && isCrossingAnyPolygon) {
-                this.observer.publish("showSnackbar", "Geometri tillagd");
-                console.log(
-                  "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
-                );
-              } else if (!isInsideAnyPolygon && isCrossingAnyPolygon) {
-                this.observer.publish("showSnackbar", "Geometri tillagd");
-                console.log(
-                  "Den ritade geometrin ligger innanför åtminstone en av polygonerna."
-                );
-              } else if (!isInsideAnyPolygon && !isCrossingAnyPolygon) {
-                this.observer.publish(
-                  "GeofencingWarning",
-                  "Geometri utanför område, vänligen försök igen!"
-                );
-                this.vectorSource.getFeatures().forEach((feature) => {
-                  feature.modification = "removed";
-                  feature.setStyle(this.getHiddenStyle());
-                  this.observer.publish("showArea", 0);
-                });
-                console.log(
-                  "Den ritade geometrin ligger inte innanför polygonerna."
+              } else {
+                console.warn(
+                  "Okänd layerType. Ange 'WFS' eller 'WMS' i this.options.geofencingLayerType."
                 );
               }
             } else {
-              console.warn("Hittade inget polygonlager med rätt id.");
+              console.warn("Hittade inget polygonlager med rätt name.");
             }
           }
         } catch (error) {
           console.error("Ett fel uppstod när geometrin kontrollerades:", error);
         }
 
+        // If geofencing is not active, just confirm geometry addition
         if (!this.options.activateGeofencingLayer) {
           this.observer.publish("showSnackbar", "Geometri tillagd");
         }
