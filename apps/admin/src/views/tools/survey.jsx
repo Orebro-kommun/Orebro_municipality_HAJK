@@ -780,17 +780,34 @@ class ToolOptions extends Component {
           <div>{this.renderVisibleForGroups()}</div>
           <div>
             <div className="separator">Geofencinglager</div>
-            <input
-              id="activateGeofencingLayer"
-              name="activateGeofencingLayer"
-              type="checkbox"
-              onChange={(e) => {
-                this.handleInputChange(e);
-              }}
-              checked={this.state.activateGeofencingLayer}
-            />
-            &nbsp;
-            <label htmlFor="activateGeofencingLayer">Aktivera geofencinglager</label>
+            <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+              <input
+                id="activateGeofencingLayer"
+                name="activateGeofencingLayer"
+                type="checkbox"
+                onChange={this.handleInputChange}
+                checked={this.state.activateGeofencingLayer}
+              />
+              &nbsp;
+              <label htmlFor="activateGeofencingLayer" style={{ whiteSpace: "nowrap" }}>
+                Aktivera geofencinglager
+              </label>
+              {this.state.geofencingLayerType === "WMS" && (
+                <div
+                  style={{
+                    backgroundColor: "orange",
+                    color: "black",
+                    padding: "10px",
+                    marginLeft: "auto",
+                    borderRadius: "4px",
+                    maxWidth: "300px",
+                  }}
+                >
+                  Vid val av WMS så rekommenderar vi endast punkter. Använder ni linjer eller ytor rekommenderar vi WFS
+                  med anledning av att linjer och ytor i WMS jämförs mot centrumkoordinater.
+                </div>
+              )}
+            </div>
           </div>
           <div>
             <label htmlFor="geofencingLayerType">Välj lagertyp</label>&nbsp;
@@ -815,6 +832,7 @@ class ToolOptions extends Component {
               onChosenLayersChange={(updatedLayerId) => this.setState({ selectedGeofencingLayer: updatedLayerId })}
             />
           </div>
+          {/* Commented out for now since it's not in use.
           <div>
             <div className="separator">Aktivering av kartbeställningsunderlag</div>
             <input
@@ -854,7 +872,7 @@ class ToolOptions extends Component {
               }}
               value={this.state.mapOrderPrice}
             />
-          </div>
+          </div>*/}
           <div>
             <div className="separator">Redigeringstjänster</div>
             {this.state.tree}

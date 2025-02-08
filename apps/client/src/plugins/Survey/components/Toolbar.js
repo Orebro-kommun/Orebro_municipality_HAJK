@@ -1,6 +1,8 @@
 import React, { Component } from "react";
 import { styled } from "@mui/material/styles";
 import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 //import DeleteIcon from "@mui/icons-material/Delete";
 import ScatterPlotIcon from "@mui/icons-material/ScatterPlot";
 import BorderStyleIcon from "@mui/icons-material/BorderStyle";
@@ -180,7 +182,38 @@ class Toolbar extends Component {
     return (
       <Grid container spacing={1}>
         <Grid item xs={12}>
-          <Typography>Markera i kartan</Typography>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 2,
+            }}
+          >
+            {!this.props.geofencingWarningToolbar && (
+              <Typography>
+                <b>Markera i kartan</b>
+              </Typography>
+            )}
+            {this.props.geofencingWarningToolbar && (
+              <Box
+                sx={{
+                  backgroundColor: "orange",
+                  padding: 1,
+                  borderRadius: 1,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <WarningAmberIcon sx={{ mr: 0.5 }} />
+                <Typography variant="body1">
+                  Vänligen rita inom det fördefinierade området.
+                  <br />
+                  Ingen geometri tillagd!
+                </Typography>
+              </Box>
+            )}
+          </Box>
         </Grid>
         <Grid container spacing={2}>
           {(this.toolbarOptions === "all" ||

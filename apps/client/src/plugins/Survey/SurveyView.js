@@ -100,6 +100,8 @@ function SurveyView(props) {
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const rootMap = useRef(new Map());
   const visibleChangedHandlerRef = React.useRef(null);
+  const [geofencingWarningToolbar, setGeofencingWarningToolbar] =
+    useState(false);
 
   // Used for responseanswer
   const [isCompleted, setIsCompleted] = useState(false);
@@ -214,6 +216,8 @@ function SurveyView(props) {
     const snackbarHandler = (message) => {
       enqueueSnackbar(message, { variant: "info" });
 
+      setGeofencingWarningToolbar(false);
+
       // Check that editViewRef is defined first
       if (editViewRef?.current?.onSaveClicked) {
         editViewRef.current.onSaveClicked();
@@ -231,6 +235,8 @@ function SurveyView(props) {
   React.useEffect(() => {
     const snackbarHandler = (message) => {
       enqueueSnackbar(message, { variant: "warning" });
+
+      setGeofencingWarningToolbar(true);
 
       // Check that editViewRef is defined first
       if (editViewRef?.current?.onSaveClicked) {
@@ -367,6 +373,9 @@ function SurveyView(props) {
 
     // 3) Hide EditView — if you want it to be unmounted entirely,
     setShowEditView({ show: false });
+
+    // 4) Reset geofencing warning
+    setGeofencingWarningToolbar(false);
   };
 
   const [editModel] = React.useState(
@@ -410,6 +419,7 @@ function SurveyView(props) {
               toolbarOptions={showEditView.toolbarOptions}
               area={area}
               price={price.toFixed(2)}
+              geofencingWarningToolbar={geofencingWarningToolbar}
             />
           );
         }
@@ -433,6 +443,7 @@ function SurveyView(props) {
               toolbarOptions={showEditView.toolbarOptions}
               area={area}
               price={price.toFixed(2)}
+              geofencingWarningToolbar={geofencingWarningToolbar}
             />
           );
         }
@@ -453,6 +464,7 @@ function SurveyView(props) {
     showEditView.toolbarOptions,
     area,
     price,
+    geofencingWarningToolbar,
   ]);
 
   useEffect(() => {
