@@ -785,7 +785,9 @@ class ToolOptions extends Component {
                 id="activateGeofencingLayer"
                 name="activateGeofencingLayer"
                 type="checkbox"
-                onChange={this.handleInputChange}
+                onChange={(e) => {
+                  this.handleInputChange(e);
+                }}
                 checked={this.state.activateGeofencingLayer}
               />
               &nbsp;
