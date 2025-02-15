@@ -93,7 +93,8 @@ function SurveyView(props) {
   const [currentQuestionName, setCurrentQuestionName] = useState(null);
   const [survey, setSurvey] = useState(null);
   const [surveyJsData, setSurveyJsData] = React.useState(props.surveyJsData);
-  const { responseMessage, restartButtonText } = props.options;
+  const { responseMessage, responseErrorMessage, restartButtonText } =
+    props.options;
   const hasRestartButtonText =
     props.options.restartButtonText &&
     props.options.restartButtonText.trim() !== "";
@@ -140,6 +141,7 @@ function SurveyView(props) {
   // Checks if responseMessage contains html
   const containsHTML = (str) => /<\/?[a-z][\s\S]*>/i.test(str);
   const messageContainsHTML = containsHTML(responseMessage);
+  const messageErrorContainsHTML = containsHTML(responseErrorMessage);
 
   //Unique ID and name on survey
   function generateUniqueID() {
@@ -314,9 +316,7 @@ function SurveyView(props) {
         // Call the handleOnComplete method with combined data
         await props.model.handleOnComplete(combinedData);
       } catch (error) {
-        setShowErrorMessage(
-          "Ett fel uppstod vid inlämning av enkät" // + error.message
-        );
+        setShowErrorMessage(responseErrorMessage);
       }
       setIsCompleted(true);
       setShowEditView({ show: false });
@@ -564,32 +564,33 @@ function SurveyView(props) {
             textAlign: "center",
           }}
         >
-          {messageContainsHTML ? (
-            // If content HTML render as HTML
-            <div
-              className="response-message"
-              dangerouslySetInnerHTML={{
-                __html: responseMessage,
-              }}
-            ></div>
-          ) : (
-            // If not HTML, set style, render as text and manage \n
-            <p
-              style={{
-                fontSize: "1.5em",
-                margin: "0",
-                fontWeight: "bold",
-              }}
-            >
-              {responseMessage.split("\n").map((line, index) => (
-                <React.Fragment key={index}>
-                  {line}
-                  <br />
-                </React.Fragment>
-              ))}
-            </p>
-          )}
-
+          {!showErrorMessage ? (
+            messageContainsHTML ? (
+              // If content HTML render as HTML
+              <div
+                className="response-message"
+                dangerouslySetInnerHTML={{
+                  __html: responseMessage,
+                }}
+              ></div>
+            ) : (
+              // If not HTML, set style, render as text and manage \n
+              <p
+                style={{
+                  fontSize: "1.5em",
+                  margin: "0",
+                  fontWeight: "bold",
+                }}
+              >
+                {responseMessage.split("\n").map((line, index) => (
+                  <React.Fragment key={index}>
+                    {line}
+                    <br />
+                  </React.Fragment>
+                ))}
+              </p>
+            )
+          ) : null}
           {hasRestartButtonText && (
             <button
               onClick={restartSurvey}
@@ -640,7 +641,31 @@ function SurveyView(props) {
             borderRadius: "5px",
           }}
         >
-          {showErrorMessage}
+          {messageErrorContainsHTML ? (
+            // If content HTML render as HTML
+            <div
+              className="response-error-message"
+              dangerouslySetInnerHTML={{
+                __html: responseErrorMessage,
+              }}
+            ></div>
+          ) : (
+            // If not HTML, set style, render as text and manage \n
+            <p
+              style={{
+                fontSize: "1.5em",
+                margin: "0",
+                fontWeight: "bold",
+              }}
+            >
+              {responseErrorMessage.split("\n").map((line, index) => (
+                <React.Fragment key={index}>
+                  {line}
+                  <br />
+                </React.Fragment>
+              ))}
+            </p>
+          )}
         </div>
       )}
     </>

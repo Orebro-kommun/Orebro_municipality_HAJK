@@ -20,6 +20,8 @@ const ColorButtonBlue = withStyles((theme) => ({
 }))(Button);
 
 const defaultState = {
+  responseErrorMessage:
+    '<div style="font-size: 25px; font-weight: bold;">Oopps, nåt gick fel!</div>\n<div>Kontakta oss på...</div>',
   geofencingLayers: [],
   validationErrors: [],
   active: false,
@@ -89,6 +91,7 @@ class ToolOptions extends Component {
     if (tool) {
       this.setState(
         {
+          responseErrorMessage: tool.options.responseErrorMessage,
           selectedGeofencingLayer: tool.options.selectedGeofencingLayer,
           activateGeofencingLayer: tool.options.activateGeofencingLayer,
           geofencingLayerType: tool.options.geofencingLayerType,
@@ -332,6 +335,7 @@ class ToolOptions extends Component {
       type: this.type,
       index: this.state.index,
       options: {
+        responseErrorMessage: this.state.responseErrorMessage,
         selectedGeofencingLayer: this.state.selectedGeofencingLayer,
         activateGeofencingLayer: this.state.activateGeofencingLayer,
         geofencingLayerType: this.state.geofencingLayerType,
@@ -778,6 +782,25 @@ class ToolOptions extends Component {
             />
           </div>
           <div>{this.renderVisibleForGroups()}</div>
+          <div className="separator">Felmeddelande vid slutförd enkät</div>
+          <div>
+            <label htmlFor="responseErrorMessage">
+              Svarsmeddelande vid slutförd enkät{" "}
+              <i
+                className="fa fa-question-circle"
+                data-toggle="tooltip"
+                title="Går att använda med eller utan HTML. Om du skriver utan HTML så skapas en stil automatiskt. Du kan även använda radbrytning utan HTML"
+              />
+            </label>
+            <textarea
+              value={this.state.responseErrorMessage}
+              type="text"
+              name="responseErrorMessage"
+              onChange={(e) => {
+                this.handleInputChange(e);
+              }}
+            />
+          </div>
           <div>
             <div className="separator">Geofencinglager</div>
             <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
