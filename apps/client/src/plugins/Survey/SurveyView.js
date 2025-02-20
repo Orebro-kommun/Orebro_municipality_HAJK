@@ -104,6 +104,9 @@ function SurveyView(props) {
   const [geofencingWarningToolbar, setGeofencingWarningToolbar] =
     useState(false);
 
+  // Checks if geometry is in map, warning not set in survey
+  const [drawnGeometryMap, setDrawnGeometryMap] = useState({});
+
   // Used for responseanswer
   const [isCompleted, setIsCompleted] = useState(false);
   const [surveyKey, setSurveyKey] = useState(0);
@@ -253,6 +256,21 @@ function SurveyView(props) {
       localObserver.unsubscribe("GeofencingWarning", snackbarHandler);
     };
   }, [localObserver, enqueueSnackbar]);
+
+  useEffect(() => {
+    const handleFeatureDrawn = (data) => {
+      setDrawnGeometryMap((prev) => ({
+        ...prev,
+        [data.currentQuestionName]: data.status,
+      }));
+    };
+
+    props.localObserver.subscribe("feature-drawn", handleFeatureDrawn);
+
+    return () => {
+      props.localObserver.unsubscribe("feature-drawn", handleFeatureDrawn);
+    };
+  }, [props.localObserver]);
 
   const handleOnCompleting = () => {
     if (showEditView.show) {
@@ -420,6 +438,7 @@ function SurveyView(props) {
               area={area}
               price={price.toFixed(2)}
               geofencingWarningToolbar={geofencingWarningToolbar}
+              drawnGeometryMap={drawnGeometryMap}
             />
           );
         }
@@ -444,6 +463,7 @@ function SurveyView(props) {
               area={area}
               price={price.toFixed(2)}
               geofencingWarningToolbar={geofencingWarningToolbar}
+              drawnGeometryMap={drawnGeometryMap}
             />
           );
         }
@@ -465,6 +485,7 @@ function SurveyView(props) {
     area,
     price,
     geofencingWarningToolbar,
+    drawnGeometryMap,
   ]);
 
   useEffect(() => {

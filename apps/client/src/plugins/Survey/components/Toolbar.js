@@ -208,10 +208,39 @@ class Toolbar extends Component {
                 <WarningAmberIcon sx={{ mr: 0.5 }} />
                 <Typography variant="body1">
                   Vänligen rita inom det fördefinierade området.
-                  <br />
-                  Ingen geometri tillagd!
                 </Typography>
               </Box>
+            )}
+          </Box>
+        </Grid>
+        <Grid item xs={12}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 2,
+            }}
+          >
+            {this.props.drawnGeometryMap[this.props.currentQuestionName] !==
+              "added" && (
+              <Typography
+                style={{
+                  color: "white",
+                  backgroundColor: "orange",
+                  padding: 4,
+                }}
+              >
+                Geometri ännu inte tillagd!
+              </Typography>
+            )}
+            {this.props.drawnGeometryMap[this.props.currentQuestionName] ===
+              "added" && (
+              <Typography
+                style={{ color: "white", backgroundColor: "green", padding: 4 }}
+              >
+                Geometri tillagd!
+              </Typography>
             )}
           </Box>
         </Grid>

@@ -111,6 +111,11 @@ class EditModel {
             this.vectorSource.getFeatures().forEach((feature) => {
               feature.modification = "removed";
               feature.setStyle(this.getHiddenStyle());
+
+              this.observer.publish("feature-drawn", {
+                status: feature.modification,
+                currentQuestionName: this.currentQuestionName,
+              });
             });
 
             const wgs84Coords = [longitude, latitude];
@@ -148,6 +153,11 @@ class EditModel {
             feature.modification = "added";
 
             this.vectorSource.addFeature(feature);
+
+            this.observer.publish("feature-drawn", {
+              status: feature.modification,
+              currentQuestionName: this.currentQuestionName,
+            });
 
             this.pointString = `POINT(${projectedCoords[0]} ${projectedCoords[1]})`;
 
@@ -1060,6 +1070,11 @@ class EditModel {
       feature.modification = "removed";
       feature.setStyle(this.getHiddenStyle());
       this.observer.publish("showArea", 0);
+
+      this.observer.publish("feature-drawn", {
+        status: feature.modification,
+        currentQuestionName: this.currentQuestionName,
+      });
     });
 
     const wgs84 = "EPSG:4326";
@@ -1076,6 +1091,11 @@ class EditModel {
     this.draw.on("drawend", (event) => {
       event.feature.modification = "added";
       this.editAttributes(event.feature);
+
+      this.observer.publish("feature-drawn", {
+        status: event.feature.modification,
+        currentQuestionName: this.currentQuestionName,
+      });
 
       // Convert geometry to WGS84 before calculating area
       const geoJsonFormat = new GeoJSON();
@@ -1163,6 +1183,11 @@ class EditModel {
                     feature.modification = "removed";
                     feature.setStyle(this.getHiddenStyle());
                     this.observer.publish("showArea", 0);
+
+                    this.observer.publish("feature-drawn", {
+                      status: feature.modification,
+                      currentQuestionName: this.currentQuestionName,
+                    });
                   });
                   console.log(
                     "Den ritade geometrin ligger inte innanför polygon (WFS)."
@@ -1211,6 +1236,11 @@ class EditModel {
                             feature.modification = "removed";
                             feature.setStyle(this.getHiddenStyle());
                             this.observer.publish("showArea", 0);
+
+                            this.observer.publish("feature-drawn", {
+                              status: feature.modification,
+                              currentQuestionName: this.currentQuestionName,
+                            });
                           });
                           console.log(
                             "Den ritade geometrin ligger inte innanför polygon (WMS)."
@@ -1268,6 +1298,11 @@ class EditModel {
                                 feature.modification = "removed";
                                 feature.setStyle(this.getHiddenStyle());
                                 this.observer.publish("showArea", 0);
+
+                                this.observer.publish("feature-drawn", {
+                                  status: feature.modification,
+                                  currentQuestionName: this.currentQuestionName,
+                                });
                               });
                             console.log(
                               "Den ritade geometrin ligger inte innanför polygon (WMS)."
