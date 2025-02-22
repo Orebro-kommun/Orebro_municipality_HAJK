@@ -7,7 +7,7 @@ import { Model } from "survey-core";
 import "survey-core/defaultV2.min.css";
 import "survey-core/i18n/swedish";
 import ReactDOM from "react-dom/client";
-//import WKT from "ol/format/WKT";
+import WKT from "ol/format/WKT";
 
 import EditView from "./EditView.js";
 import EditModel from "./EditModel.js";
@@ -181,6 +181,8 @@ function SurveyView(props) {
     editModel.reset();
     editModel.newMapData = [];
 
+    setDrawnGeometryMap({});
+
     rootMap.current.forEach((root, container) => {
       if (root) {
         root.unmount(); // Unmount component from root
@@ -258,10 +260,22 @@ function SurveyView(props) {
   }, [localObserver, enqueueSnackbar]);
 
   useEffect(() => {
+    const wktFormatter = new WKT();
     const handleFeatureDrawn = (data) => {
+      const questionName = data.currentQuestionName;
+
+      if (data.status === "added") {
+        // Convert feature to WKT-string
+        const wktString = wktFormatter.writeFeature(data.feature);
+        survey.setValue(questionName, wktString);
+      } else if (data.status === "removed") {
+        // remove value from question
+        survey.setValue(questionName, null);
+      }
+
       setDrawnGeometryMap((prev) => ({
         ...prev,
-        [data.currentQuestionName]: data.status,
+        [questionName]: data.status,
       }));
     };
 
@@ -270,7 +284,7 @@ function SurveyView(props) {
     return () => {
       props.localObserver.unsubscribe("feature-drawn", handleFeatureDrawn);
     };
-  }, [props.localObserver]);
+  }, [props.localObserver, survey]);
 
   const handleOnCompleting = () => {
     if (showEditView.show) {

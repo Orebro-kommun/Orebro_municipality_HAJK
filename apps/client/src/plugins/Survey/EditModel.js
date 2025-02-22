@@ -115,6 +115,7 @@ class EditModel {
               this.observer.publish("feature-drawn", {
                 status: feature.modification,
                 currentQuestionName: this.currentQuestionName,
+                feature: feature,
               });
             });
 
@@ -157,6 +158,7 @@ class EditModel {
             this.observer.publish("feature-drawn", {
               status: feature.modification,
               currentQuestionName: this.currentQuestionName,
+              feature: feature,
             });
 
             this.pointString = `POINT(${projectedCoords[0]} ${projectedCoords[1]})`;
@@ -1074,6 +1076,7 @@ class EditModel {
       this.observer.publish("feature-drawn", {
         status: feature.modification,
         currentQuestionName: this.currentQuestionName,
+        feature: feature,
       });
     });
 
@@ -1095,6 +1098,7 @@ class EditModel {
       this.observer.publish("feature-drawn", {
         status: event.feature.modification,
         currentQuestionName: this.currentQuestionName,
+        feature: event.feature,
       });
 
       // Convert geometry to WGS84 before calculating area
@@ -1187,6 +1191,7 @@ class EditModel {
                     this.observer.publish("feature-drawn", {
                       status: feature.modification,
                       currentQuestionName: this.currentQuestionName,
+                      feature: feature,
                     });
                   });
                   console.log(
@@ -1240,6 +1245,7 @@ class EditModel {
                             this.observer.publish("feature-drawn", {
                               status: feature.modification,
                               currentQuestionName: this.currentQuestionName,
+                              feature: feature,
                             });
                           });
                           console.log(
@@ -1302,6 +1308,7 @@ class EditModel {
                                 this.observer.publish("feature-drawn", {
                                   status: feature.modification,
                                   currentQuestionName: this.currentQuestionName,
+                                  feature: feature,
                                 });
                               });
                             console.log(
