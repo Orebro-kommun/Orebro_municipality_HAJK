@@ -266,6 +266,7 @@ class EditView extends React.PureComponent {
         geofencingWarningToolbar={this.props.geofencingWarningToolbar}
         drawnGeometryMap={this.props.drawnGeometryMap}
         currentQuestionName={this.props.currentQuestionName}
+        geometryValid={this.props.geometryValid}
       />
     );
   };

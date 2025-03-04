@@ -61,6 +61,7 @@
     "@turf/boolean-within": "^7.2.0",
     "@turf/buffer": "^6.5.0",
     "@turf/centroid": "^7.2.0",
+    "@turf/kinks": "^7.2.0",
     "@turf/transform-translate": "^6.5.0",
     "@turf/union": "^6.5.0",
     "core-js": "^3.36.0",

@@ -8,6 +8,8 @@ import "survey-core/defaultV2.min.css";
 import "survey-core/i18n/swedish";
 import ReactDOM from "react-dom/client";
 import WKT from "ol/format/WKT";
+import GeoJSON from "ol/format/GeoJSON";
+import kinks from "@turf/kinks";
 
 import EditView from "./EditView.js";
 import EditModel from "./EditModel.js";
@@ -106,6 +108,9 @@ function SurveyView(props) {
 
   // Checks if geometry is in map, warning not set in survey
   const [drawnGeometryMap, setDrawnGeometryMap] = useState({});
+
+  // Valid polygon and linestring
+  const [geometryValid, setGeometryValid] = useState(true);
 
   // Used for responseanswer
   const [isCompleted, setIsCompleted] = useState(false);
@@ -261,6 +266,7 @@ function SurveyView(props) {
 
   useEffect(() => {
     const wktFormatter = new WKT();
+    const geojsonFormatter = new GeoJSON();
     const handleFeatureDrawn = (data) => {
       const questionName = data.currentQuestionName;
 
@@ -268,9 +274,28 @@ function SurveyView(props) {
         // Convert feature to WKT-string
         const wktString = wktFormatter.writeFeature(data.feature);
         survey.setValue(questionName, wktString);
+
+        const geometryType = data.feature.getGeometry().getType();
+        if (geometryType !== "Point") {
+          try {
+            const geojson = geojsonFormatter.writeFeatureObject(data.feature);
+            const kinksResult = kinks(geojson);
+            if (kinksResult.features.length > 0) {
+              setGeometryValid(false);
+            } else {
+              setGeometryValid(true);
+            }
+          } catch (error) {
+            console.error("Fel vid kinks-beräkning:", error);
+            setGeometryValid(false);
+          }
+        } else {
+          setGeometryValid(true);
+        }
       } else if (data.status === "removed") {
         // remove value from question
         survey.setValue(questionName, null);
+        setGeometryValid(true);
       }
 
       setDrawnGeometryMap((prev) => ({
@@ -453,6 +478,7 @@ function SurveyView(props) {
               price={price.toFixed(2)}
               geofencingWarningToolbar={geofencingWarningToolbar}
               drawnGeometryMap={drawnGeometryMap}
+              geometryValid={geometryValid}
             />
           );
         }
@@ -478,6 +504,7 @@ function SurveyView(props) {
               price={price.toFixed(2)}
               geofencingWarningToolbar={geofencingWarningToolbar}
               drawnGeometryMap={drawnGeometryMap}
+              geometryValid={geometryValid}
             />
           );
         }
@@ -500,6 +527,7 @@ function SurveyView(props) {
     price,
     geofencingWarningToolbar,
     drawnGeometryMap,
+    geometryValid,
   ]);
 
   useEffect(() => {
