@@ -222,7 +222,8 @@ class Toolbar extends Component {
               mb: 2,
             }}
           >
-            {!this.props.geometryValid && (
+            {this.props.geometryValidMap[this.props.currentQuestionName] ===
+              false && (
               <Typography
                 style={{
                   color: "white",
@@ -247,7 +248,8 @@ class Toolbar extends Component {
             )}
             {this.props.drawnGeometryMap[this.props.currentQuestionName] ===
               "added" &&
-              this.props.geometryValid && (
+              this.props.geometryValidMap[this.props.currentQuestionName] ===
+                true && (
                 <Typography
                   style={{
                     color: "white",
