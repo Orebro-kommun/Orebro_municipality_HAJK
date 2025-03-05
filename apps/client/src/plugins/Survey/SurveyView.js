@@ -8,8 +8,6 @@ import "survey-core/defaultV2.min.css";
 import "survey-core/i18n/swedish";
 import ReactDOM from "react-dom/client";
 import WKT from "ol/format/WKT";
-import GeoJSON from "ol/format/GeoJSON";
-import kinks from "@turf/kinks";
 
 import EditView from "./EditView.js";
 import EditModel from "./EditModel.js";
@@ -267,8 +265,6 @@ function SurveyView(props) {
 
   useEffect(() => {
     const wktFormatter = new WKT();
-    const geojsonFormatter = new GeoJSON();
-    let geometryValid = true;
     const handleFeatureDrawn = (data) => {
       const questionName = data.currentQuestionName;
 
@@ -276,28 +272,15 @@ function SurveyView(props) {
         // Convert feature to WKT-string
         const wktString = wktFormatter.writeFeature(data.feature);
         survey.setValue(questionName, wktString);
-
-        const geometryType = data.feature.getGeometry().getType();
-        if (geometryType !== "Point") {
-          try {
-            const geojson = geojsonFormatter.writeFeatureObject(data.feature);
-            const kinksResult = kinks(geojson);
-            if (kinksResult.features.length > 0) {
-              geometryValid = false;
-            } else {
-              geometryValid = true;
-            }
-          } catch (error) {
-            console.error("Fel vid kinks-beräkning:", error);
-            geometryValid = false;
-          }
-        } else {
-          geometryValid = true;
+        if (data.inOut === "in" || data.inOut === "off") {
+          setGeofencingWarningToolbar(false);
         }
       } else if (data.status === "removed") {
         // remove value from question
         survey.setValue(questionName, null);
-        geometryValid = true;
+        if (data.inOut === "in" || data.inOut === "off") {
+          setGeofencingWarningToolbar(false);
+        }
       }
 
       setDrawnGeometryMap((prev) => ({
@@ -305,10 +288,17 @@ function SurveyView(props) {
         [questionName]: data.status,
       }));
 
-      setGeometryValidMap((prev) => ({
-        ...prev,
-        [questionName]: geometryValid,
-      }));
+      if (data.valid === true || data.valid === undefined) {
+        setGeometryValidMap((prev) => ({
+          ...prev,
+          [questionName]: true,
+        }));
+      } else {
+        setGeometryValidMap((prev) => ({
+          ...prev,
+          [questionName]: false,
+        }));
+      }
     };
 
     props.localObserver.subscribe("feature-drawn", handleFeatureDrawn);

@@ -16,6 +16,7 @@ import { booleanIntersects } from "@turf/boolean-intersects";
 import { centroid as turfCentroid } from "@turf/centroid";
 import area from "@turf/area";
 import { transform } from "ol/proj";
+import kinks from "@turf/kinks";
 
 class EditModel {
   constructor(settings) {
@@ -1068,6 +1069,9 @@ class EditModel {
   }
 
   activateAdd(geometryType) {
+    let geometryValid = true;
+    let geometryInOut = "";
+
     this.vectorSource.getFeatures().forEach((feature) => {
       feature.modification = "removed";
       feature.setStyle(this.getHiddenStyle());
@@ -1077,6 +1081,8 @@ class EditModel {
         status: feature.modification,
         currentQuestionName: this.currentQuestionName,
         feature: feature,
+        valid: geometryValid,
+        inOut: geometryInOut,
       });
     });
 
@@ -1092,17 +1098,32 @@ class EditModel {
     });
 
     this.draw.on("drawend", (event) => {
+      const geoJsonFormat = new GeoJSON();
+
       event.feature.modification = "added";
       this.editAttributes(event.feature);
 
-      this.observer.publish("feature-drawn", {
-        status: event.feature.modification,
-        currentQuestionName: this.currentQuestionName,
-        feature: event.feature,
-      });
+      // This is the GeoJSON in the map's projection
+      const drawnGeoJSON = geoJsonFormat.writeFeatureObject(event.feature);
+
+      const geometryType = event.feature.getGeometry().getType();
+      if (geometryType !== "Point") {
+        try {
+          const kinksResult = kinks(drawnGeoJSON);
+          if (kinksResult.features.length > 0) {
+            geometryValid = false;
+          } else {
+            geometryValid = true;
+          }
+        } catch (error) {
+          console.error("Fel vid kinks-beräkning:", error);
+          geometryValid = false;
+        }
+      } else {
+        geometryValid = true;
+      }
 
       // Convert geometry to WGS84 before calculating area
-      const geoJsonFormat = new GeoJSON();
       const geometry = event.feature.getGeometry().clone();
       geometry.transform(projection, wgs84);
       const drawnGeoJSONTransformed =
@@ -1121,9 +1142,6 @@ class EditModel {
       setTimeout(() => {
         this.deactivateInteraction();
         this.observer.publish("deactivateEditInteraction");
-
-        // This is the GeoJSON in the map's projection
-        const drawnGeoJSON = geoJsonFormat.writeFeatureObject(event.feature);
 
         // Check if geofencing is enabled
         try {
@@ -1171,14 +1189,51 @@ class EditModel {
                 });
 
                 if (
-                  (isInsideAnyPolygon && isCrossingAnyPolygon) ||
-                  (!isInsideAnyPolygon && isCrossingAnyPolygon)
+                  (isInsideAnyPolygon &&
+                    isCrossingAnyPolygon &&
+                    geometryValid) ||
+                  (!isInsideAnyPolygon && isCrossingAnyPolygon && geometryValid)
                 ) {
                   this.observer.publish("showSnackbar", "Geometri tillagd");
                   console.log(
                     "Den ritade geometrin ligger innanför polygon (WFS)."
                   );
+                  geometryInOut = "in";
+                  this.observer.publish("feature-drawn", {
+                    status: event.feature.modification,
+                    currentQuestionName: this.currentQuestionName,
+                    feature: event.feature,
+                    valid: geometryValid,
+                    inOut: geometryInOut,
+                  });
+                } else if (
+                  (isInsideAnyPolygon &&
+                    isCrossingAnyPolygon &&
+                    !geometryValid) ||
+                  (!isInsideAnyPolygon &&
+                    isCrossingAnyPolygon &&
+                    !geometryValid)
+                ) {
+                  geometryInOut = "in";
+                  this.vectorSource.getFeatures().forEach((feature) => {
+                    feature.modification = "removed";
+                    feature.setStyle(this.getHiddenStyle());
+                    this.observer.publish("showArea", 0);
+
+                    this.observer.publish("feature-drawn", {
+                      status: event.feature.modification,
+                      currentQuestionName: this.currentQuestionName,
+                      feature: event.feature,
+                      valid: geometryValid,
+                      inOut: geometryInOut,
+                    });
+                    this.observer.publish(
+                      "GeofencingWarning",
+                      "Geometri ej tillagd, vänligen försök igen!"
+                    );
+                  });
                 } else {
+                  geometryInOut = "out";
                   this.observer.publish(
                     "GeofencingWarning",
                     "Geometri utanför område, vänligen försök igen!"
@@ -1192,6 +1247,8 @@ class EditModel {
                       status: feature.modification,
                       currentQuestionName: this.currentQuestionName,
                       feature: feature,
+                      valid: geometryValid,
+                      inOut: geometryInOut,
                     });
                   });
                   console.log(
@@ -1233,6 +1290,7 @@ class EditModel {
                       .then((data) => {
                         if (!data.features || data.features.length === 0) {
                           // No features found → outside
+                          geometryInOut = "out";
                           this.observer.publish(
                             "GeofencingWarning",
                             "Geometri utanför område, vänligen försök igen!"
@@ -1246,6 +1304,8 @@ class EditModel {
                               status: feature.modification,
                               currentQuestionName: this.currentQuestionName,
                               feature: feature,
+                              valid: geometryValid,
+                              inOut: geometryInOut,
                             });
                           });
                           console.log(
@@ -1283,9 +1343,14 @@ class EditModel {
                           });
 
                           if (
-                            (isInsideAnyPolygon && isCrossingAnyPolygon) ||
-                            (!isInsideAnyPolygon && isCrossingAnyPolygon)
+                            (isInsideAnyPolygon &&
+                              isCrossingAnyPolygon &&
+                              geometryValid) ||
+                            (!isInsideAnyPolygon &&
+                              isCrossingAnyPolygon &&
+                              geometryValid)
                           ) {
+                            geometryInOut = "in";
                             this.observer.publish(
                               "showSnackbar",
                               "Geometri tillagd"
@@ -1293,7 +1358,43 @@ class EditModel {
                             console.log(
                               "Den ritade geometrin ligger innanför polygon (WMS)."
                             );
+                            this.observer.publish("feature-drawn", {
+                              status: event.feature.modification,
+                              currentQuestionName: this.currentQuestionName,
+                              feature: event.feature,
+                              valid: geometryValid,
+                              inOut: geometryInOut,
+                            });
+                          } else if (
+                            (isInsideAnyPolygon &&
+                              isCrossingAnyPolygon &&
+                              !geometryValid) ||
+                            (!isInsideAnyPolygon &&
+                              isCrossingAnyPolygon &&
+                              !geometryValid)
+                          ) {
+                            geometryInOut = "in";
+                            this.vectorSource
+                              .getFeatures()
+                              .forEach((feature) => {
+                                feature.modification = "removed";
+                                feature.setStyle(this.getHiddenStyle());
+                                this.observer.publish("showArea", 0);
+
+                                this.observer.publish("feature-drawn", {
+                                  status: event.feature.modification,
+                                  currentQuestionName: this.currentQuestionName,
+                                  feature: event.feature,
+                                  valid: geometryValid,
+                                  inOut: geometryInOut,
+                                });
+                                this.observer.publish(
+                                  "GeofencingWarning",
+                                  "Geometri ej tillagd, vänligen försök igen!"
+                                );
+                              });
                           } else {
+                            geometryInOut = "out";
                             this.observer.publish(
                               "GeofencingWarning",
                               "Geometri utanför område, vänligen försök igen!"
@@ -1309,6 +1410,8 @@ class EditModel {
                                   status: feature.modification,
                                   currentQuestionName: this.currentQuestionName,
                                   feature: feature,
+                                  valid: geometryValid,
+                                  inOut: geometryInOut,
                                 });
                               });
                             console.log(
@@ -1343,8 +1446,38 @@ class EditModel {
         }
 
         // If geofencing is not active, just confirm geometry addition
-        if (!this.options.activateGeofencingLayer) {
+        if (!this.options.activateGeofencingLayer && geometryValid === true) {
+          geometryInOut = "off";
           this.observer.publish("showSnackbar", "Geometri tillagd");
+          this.observer.publish("feature-drawn", {
+            status: event.feature.modification,
+            currentQuestionName: this.currentQuestionName,
+            feature: event.feature,
+            valid: geometryValid,
+            inOut: geometryInOut,
+          });
+        } else if (
+          !this.options.activateGeofencingLayer &&
+          geometryValid === false
+        ) {
+          geometryInOut = "off";
+          this.observer.publish(
+            "GeofencingWarning",
+            "Geometri ej tillagd, vänligen försök igen!"
+          );
+          this.vectorSource.getFeatures().forEach((feature) => {
+            feature.modification = "removed";
+            feature.setStyle(this.getHiddenStyle());
+            this.observer.publish("showArea", 0);
+
+            this.observer.publish("feature-drawn", {
+              status: feature.modification,
+              currentQuestionName: this.currentQuestionName,
+              feature: feature,
+              valid: geometryValid,
+              inOut: geometryInOut,
+            });
+          });
         }
       }, 1);
 
