@@ -206,7 +206,13 @@ class Toolbar extends Component {
                 }}
               >
                 <WarningAmberIcon sx={{ mr: 0.5 }} />
-                <Typography variant="body1">
+                <Typography
+                  variant="body1"
+                  style={{
+                    padding: 4,
+                    fontSize: 14,
+                  }}
+                >
                   Vänligen rita inom det fördefinierade området.
                 </Typography>
               </Box>
@@ -229,6 +235,7 @@ class Toolbar extends Component {
                   color: "white",
                   backgroundColor: "red",
                   padding: 4,
+                  fontSize: 14,
                 }}
               >
                 Geometrin är ogiltig eftersom den korsar sig själv!
@@ -241,6 +248,7 @@ class Toolbar extends Component {
                   color: "white",
                   backgroundColor: "orange",
                   padding: 4,
+                  fontSize: 14,
                 }}
               >
                 Geometri ännu inte tillagd!
@@ -255,6 +263,7 @@ class Toolbar extends Component {
                     color: "white",
                     backgroundColor: "green",
                     padding: 4,
+                    fontSize: 14,
                   }}
                 >
                   Geometri tillagd!
