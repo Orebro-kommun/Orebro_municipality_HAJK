@@ -228,19 +228,6 @@ class Toolbar extends Component {
               mb: 2,
             }}
           >
-            {this.props.geometryValidMap[this.props.currentQuestionName] ===
-              false && (
-              <Typography
-                style={{
-                  color: "white",
-                  backgroundColor: "red",
-                  padding: 4,
-                  fontSize: 14,
-                }}
-              >
-                Geometrin är ogiltig eftersom den korsar sig själv!
-              </Typography>
-            )}
             {this.props.drawnGeometryMap[this.props.currentQuestionName] !==
               "added" && (
               <Typography
@@ -252,6 +239,19 @@ class Toolbar extends Component {
                 }}
               >
                 Geometri ännu inte tillagd!
+              </Typography>
+            )}
+            {this.props.geometryValidMap[this.props.currentQuestionName] ===
+              false && (
+              <Typography
+                style={{
+                  color: "white",
+                  backgroundColor: "red",
+                  padding: 4,
+                  fontSize: 14,
+                }}
+              >
+                Geometrin är ogiltig eftersom den korsar sig själv!
               </Typography>
             )}
             {this.props.drawnGeometryMap[this.props.currentQuestionName] ===
