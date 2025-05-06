@@ -55,7 +55,9 @@ const IconWrapper = styled("div")(({ theme }) => ({
 const CustomPopper = (props) => {
   const theme = useTheme();
   const smallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
   const style = smallScreen ? { width: "100%" } : { width: 400 };
+
   return (
     <Popper
       {...props}
@@ -101,6 +103,8 @@ class SearchBar extends React.PureComponent {
     resultsLayerVisible: true,
   };
 
+  gridRef = React.createRef();
+
   componentDidMount() {
     // The OL layer that holds the result features. We grab
     // it here so we can control its visibility using a button
@@ -112,6 +116,11 @@ class SearchBar extends React.PureComponent {
     if (this.resultsLayer.getVisible() !== true) {
       this.setState({ resultsLayer: false });
     }
+
+    this.props.app.globalObserver.publish(
+      "core.window.add",
+      this.gridRef.current
+    );
   }
 
   toggleResultsLayerVisibility = () => {
@@ -292,7 +301,7 @@ class SearchBar extends React.PureComponent {
         id="searchInputField"
         freeSolo
         size={"small"}
-        PopperComponent={CustomPopper}
+        PopperComponent={(popperProps) => <CustomPopper {...popperProps} />}
         PaperComponent={CustomPaper}
         clearOnEscape
         disabled={
@@ -317,7 +326,17 @@ class SearchBar extends React.PureComponent {
               // Important: the `key` prop must be set last, so we override the
               // one that gets there when we spread props (there is already a key
               // there, which can become duplicated under some circumstances).
-              <Grid container alignItems="center" {...props} key={props.id}>
+              <Grid
+                container
+                alignItems="center"
+                {...props}
+                key={props.id}
+                onClick={(e) => {
+                  if (props.onClick) {
+                    props.onClick(e);
+                  }
+                }}
+              >
                 <Grid item xs={1}>
                   {this.getOriginBasedIcon(option.origin)}
                 </Grid>
@@ -373,6 +392,7 @@ class SearchBar extends React.PureComponent {
       searchOptions,
       searchSources,
       updateSearchOptions,
+      enabledSearchOptions,
       searchModel,
       handleOnClickOrKeyboardSearch,
       setSearchSources,
@@ -427,7 +447,6 @@ class SearchBar extends React.PureComponent {
                   <HajkToolTip title={expandMessage}>
                     <IconButton
                       onClick={(e) => {
-                        e.stopPropagation();
                         toggleCollapseSearchResults();
                       }}
                       size="small"
@@ -443,7 +462,6 @@ class SearchBar extends React.PureComponent {
                   <HajkToolTip title={toggleResultsLayerVisibilityMessage}>
                     <IconButton
                       onClick={(e) => {
-                        e.stopPropagation();
                         this.toggleResultsLayerVisibility();
                       }}
                       size="small"
@@ -479,6 +497,7 @@ class SearchBar extends React.PureComponent {
                   searchTools={this.props.searchTools}
                   searchModel={searchModel}
                   updateSearchOptions={updateSearchOptions}
+                  enabledSearchOptions={enabledSearchOptions}
                 />
               )}
             </>
@@ -494,6 +513,14 @@ class SearchBar extends React.PureComponent {
 
     return (
       <Grid
+        ref={this.gridRef}
+        onClick={() => {
+          // This click will be captured by both search input and search result list.
+          this.props.app.globalObserver.publish(
+            "core.window.bringtofront",
+            this.gridRef.current
+          );
+        }}
         sx={{
           width: 400,
           height: (theme) => (renderElsewhere ? "auto" : theme.spacing(6)),

@@ -7,7 +7,110 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+<!-- ## [Unreleased]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security -->
+
+## [4.0.0] - 2025-04-04
+
+### Fixed
+
+- Client: Hotfix for [Window management fix](https://github.com/hajkmap/Hajk/pull/1629), see
+  [commit](https://github.com/hajkmap/Hajk/commit/d96bda0091358c25164918e4f14a159aad543d41).
+- Docker: Minor fixes to the Dockerfile, [commit](https://github.com/hajkmap/Hajk/commit/2cc601008296edbbedaa985b7411334d2766fe32).
+- Config: fixes in naming of the demo config's DocumentHandler section, [commit](https://github.com/hajkmap/Hajk/commit/d2109c5dc6a68e2fa4018123fae50cdd4e02c132).
+- Client: Hotfix for loading with malformed coordinates. [commit](https://github.com/hajkmap/Hajk/commit/1ab25f09d23aee1608ba240be3888d3450cb9735)
+- LayerSwitcher: Fix to ensure consistent labeling. [PR#1632](https://github.com/hajkmap/Hajk/pull/1632)
+- LayerSwitcher: Hotfix for tooltip getting stuck. [commit](https://github.com/hajkmap/Hajk/commit/dd220226d238a428562a1fb4b808a9e96b259994)
+- Client: Enable hash control over individual sub-layers. [PR#1635](https://github.com/hajkmap/Hajk/pull/1635)
+
+## [4.0.0-rc.2] - 2025-03-26
+
+### Fixed
+
+- LayerSwitcher: Multiple hotfixes:
+  ([commit](https://github.com/hajkmap/Hajk/commit/4d9b0ace9cbf029423e4ac836316a5272acfcf84))
+  ([commit](https://github.com/hajkmap/Hajk/commit/5371fa8fda0bba13191bccfbaf5f78a2f2c502b3))
+  ([commit](https://github.com/hajkmap/Hajk/commit/7576d013852a2e9850ee6b4f05477a742a331be8))
+  ([commit](https://github.com/hajkmap/Hajk/commit/46d1034b01a060dc5c2efc512de9b6c30d005198))
+  ([commit](https://github.com/hajkmap/Hajk/commit/4d9b0ace9cbf029423e4ac836316a5272acfcf84))
+  ([commit](https://github.com/hajkmap/Hajk/commit/337b950fcf82e55bfa181fb379a0bb1e1ce2cd69))
+- LayerSwitcher: Dialog click-and-drags moves LayerSwitcher's window below. ([issue](https://github.com/hajkmap/Hajk/issues/1600))
+- Updates to RHEL Dockerfile. ([commit](https://github.com/hajkmap/Hajk/commit/afe44edd51452035d660d9f3ae99a298550ccabb))
+- Presets: Bugfix ([commit](https://github.com/hajkmap/Hajk/commit/e296c10fca9383819ac5b46810ce55db25c8ff6a))
+- LayerSwitcher: Sublayers in hash (app state). ([issue](https://github.com/hajkmap/Hajk/issues/1603))
+- LayerSwitcher: Fixed scrolling issue. ([issue](https://github.com/hajkmap/Hajk/issues/1604))
+- LayerSwitcher: Sublayers visible among Quick Access layers. ([issue](https://github.com/hajkmap/Hajk/issues/1605))
+- Admin: Bugfix for warning when editing in Document Handler editor. ([issue](https://github.com/hajkmap/Hajk/issues/1606))
+- LayerSwitcher: Fix for missing sublayers' legend. ([issue](https://github.com/hajkmap/Hajk/issues/1607))
+- LayerSwitcher: Restored automatic layer rotation functionality. ([issue](https://github.com/hajkmap/Hajk/issues/1614))
+- LayerSwitcher: ensure to respect the `hideExpandArrow` setting. ([issue](https://github.com/hajkmap/Hajk/issues/1617))
+- Buffer and Measurer bug fixes. ([commit](https://github.com/hajkmap/Hajk/commit/44ea3549b9f79c47baf3d6be41036d5f8435ce82) and [commit](https://github.com/hajkmap/Hajk/commit/c4e1827b7dffe5f93d554670a2751ef10bc883d8))
+- LayerSwitcher: hotfix to synchronize key naming between Admin and Client, effectively enabling the Quick Access Presets functionality. ([PR](https://github.com/hajkmap/Hajk/pull/1621))
+- LayerSwitcher: Toggle sublayers when loading Quick Access presets. ([PR](https://github.com/hajkmap/Hajk/pull/1623))
+- LayerSwitcher: Fix for fitting the legend graphics. ([commit](https://github.com/hajkmap/Hajk/commit/432fe3ba528154f553d771527aab301d0666dfe9)
+- LayerSwitcher: Fix for storing the Theme Presets in LocalStorage. ([PR](https://github.com/hajkmap/Hajk/pull/1625))
+- Client/General: Refinement of Window management. ([PR](https://github.com/hajkmap/Hajk/pull/1629))
+- DocumentHandler/Admin: Now possible to edit TOC on document level. ([PR](https://github.com/hajkmap/Hajk/pull/1626))
+
+## [4.0.0-rc.1] - 2025-02-19
+
+### Added
+
+- Search: Added possibility to set default search options via admin UI. PR: [#1496](https://github.com/hajkmap/Hajk/pull/1496)
+- LayerComparer: It is now possible for to select specific layers (in Admin) that will be visible in the tool. Previously only all background layer and/or all regular layers could be selected. [#1570](https://github.com/hajkmap/Hajk/issues/1570)
+
+#### Major LayerSwitcher changes
+
+- 🚀 Filter functionality in LayerSwitcher.
+- Enhanced layer visibility indicators in LayerSwitcher.
+- Quick Access grouping in LayerSwitcher for access to frequently used layers.
+  With support for saving/recall of sets of "QuickAccess layers" to
+  LocalStorage.
+- Quick Access Layer Presets/Themes/Packages
+  Choose from ready made sets of Layers to load into the Quick Access
+  section. The Presets/Themes/Packages are set up in the map config. See
+  example in `simpleMapConfig.json`.
+- Improved DrawOrder tab functionality for managing layer drawing order.
+- LayerSwitcher Actions Menu (including scrolling actions).
+
+For details see the following issues:
+
+- [#1237](https://github.com/hajkmap/Hajk/issues/1237)
+- [#1275](https://github.com/hajkmap/Hajk/issues/1275)
+- [#1284](https://github.com/hajkmap/Hajk/issues/1284)
+- [#1296](https://github.com/hajkmap/Hajk/issues/1296)
+- [#1300](https://github.com/hajkmap/Hajk/issues/1300)
+- [#1347](https://github.com/hajkmap/Hajk/issues/1347)
+- [#1365](https://github.com/hajkmap/Hajk/issues/1365)
+- [#1380](https://github.com/hajkmap/Hajk/issues/1380)
+- [#1594](https://github.com/hajkmap/Hajk/pull/1594)
+
+### Fixed
+
+- Improved how overlapping plugins are handled. PR: [#1546](https://github.com/hajkmap/Hajk/pull/1546)
+- Several accessability improvements. PRs: [#1561](https://github.com/hajkmap/Hajk/pull/1561), [#1562](https://github.com/hajkmap/Hajk/pull/1562), [#1563](https://github.com/hajkmap/Hajk/pull/1563), [#1565](https://github.com/hajkmap/Hajk/pull/1565), [#1566](https://github.com/hajkmap/Hajk/pull/1566), [#1567](https://github.com/hajkmap/Hajk/pull/1567), [#1569](https://github.com/hajkmap/Hajk/pull/1569)
+- Admin: Fixed issue with naming of the FME Server configuration property ([commit](https://github.com/hajkmap/Hajk/commit/98b9280b56a05eaa2a037359341329ed5fc46f8e)
+
+### Removed
+
+- In accordance with [the roadmap](https://github.com/hajkmap/Hajk/blob/master/ROADMAP.md) the .NET backend was removed in the 4.0 release. ([commit](https://github.com/hajkmap/Hajk/commit/5c50105cc3fa957967196f7fc321bf5827772e7c))
+
+## [3.14.1] - 2024-10-09
+
+### BREAKING
+
+- PropertyChecker: The configuration field `digitalPlanItemDescriptionAttribute` has been renamed to `digitalPlanItemDescriptionAttributes` and holds now an array of objects rather than a string. For details, refer to [example configuration in the plugin's README](https://github.com/hajkmap/Hajk/blob/master/apps/client/src/plugins/PropertyChecker/readme.md#example-configuration).
 
 ### Added
 
@@ -312,7 +415,11 @@ _A quick follow-up to 3.13.22, that had some issues with certain map configurati
 
 ## [3.12.0-rc.2] - 2023-06-19
 
-[unreleased]: https://github.com/hajkmap/Hajk/compare/v3.14.0...develop
+[unreleased]: https://github.com/hajkmap/Hajk/compare/v4.0.0...develop
+[4.0.0]: https://github.com/hajkmap/Hajk/compare/v4.0.0-rc.2...v4.0.0
+[4.0.0-rc.2]: https://github.com/hajkmap/Hajk/compare/v4.0.0-rc.1...v4.0.0-rc.2
+[4.0.0-rc.1]: https://github.com/hajkmap/Hajk/compare/v3.14.1...v4.0.0-rc.1
+[3.14.1]: https://github.com/hajkmap/Hajk/compare/v3.14.0...v3.14.1
 [3.14.0]: https://github.com/hajkmap/Hajk/compare/v3.13.25...v3.14.0
 [3.13.25]: https://github.com/hajkmap/Hajk/compare/v3.13.24...v3.13.25
 [3.13.24]: https://github.com/hajkmap/Hajk/compare/v3.13.23...v3.13.24

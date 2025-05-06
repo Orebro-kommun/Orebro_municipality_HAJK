@@ -88,7 +88,7 @@ class ToolOptions extends Component {
         return <Edit parent={this} model={this.props.model} />;
       // case "export":
       //   return <Export parent={this} model={this.props.model} />;
-      case "fmeServer":
+      case "fmeserver":
         return <FmeServer parent={this} model={this.props.model} />;
       case "print":
         return <Print parent={this} model={this.props.model} />;
@@ -174,7 +174,7 @@ class ToolOptions extends Component {
       documenthandler: "Dokumenthanterare",
       dummy: "Dummy (testplugin)",
       externalLinks: "Externa länkar",
-      fmeServer: "FME-server",
+      fmeserver: "FME-server",
       streetview: "Gatuvy",
       infoclick: "Infoklick",
       layercomparer: "Lagerjämförare",

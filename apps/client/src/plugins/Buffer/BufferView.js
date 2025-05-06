@@ -8,7 +8,7 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import ToggleButton from "@mui/material/ToggleButton";
 import { Step, StepContent, StepLabel, Stepper } from "@mui/material";
-import { withSnackbar } from "notistack";
+import withSnackbar from "components/WithSnackbar";
 import HajkToolTip from "components/HajkToolTip";
 
 const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
@@ -45,7 +45,11 @@ class BufferView extends React.PureComponent {
   };
 
   setDistance = (e) => {
-    this.setState({ distance: e.target.value });
+    const value = e.target.value;
+    // Allow empty value, integers, or decimals like "123.456" or "123,456"
+    if (value === "" || /^\d+(?:[.,]\d*)?$/.test(value)) {
+      this.setState({ distance: value });
+    }
   };
 
   handleNext = () => {
