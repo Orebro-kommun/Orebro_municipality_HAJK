@@ -7,6 +7,7 @@ import Typography from "@mui/material/Typography";
 class EditView extends React.PureComponent {
   constructor(props) {
     super(props);
+    this.toolbarRef = React.createRef();
     this.state = {
       sources: props.model.getSources(),
       editSource: undefined,
@@ -253,7 +254,7 @@ class EditView extends React.PureComponent {
   renderToolbar = () => {
     return (
       <Toolbar
-        ref="toolbar"
+        ref={this.toolbarRef}
         editSource={this.props.model.editSource}
         model={this.props.model}
         observer={this.props.observer}
