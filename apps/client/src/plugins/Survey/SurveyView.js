@@ -446,7 +446,7 @@ function SurveyView(props) {
   editModel.currentQuestionName = currentQuestionName;
   editModel.currentQuestionTitle = currentQuestionTitle;
 
-  /*React.useEffect(() => {
+  React.useEffect(() => {
     const containers = Array.from(
       document.querySelectorAll(".editViewContainer")
     );
@@ -517,81 +517,6 @@ function SurveyView(props) {
     //resetEditView,
     currentQuestionTitle,
     currentQuestionName,
-    handleOnComplete,
-    editViewRef,
-    showEditView.toolbarOptions,
-    area,
-    price,
-    geofencingWarningToolbar,
-    drawnGeometryMap,
-    geometryValidMap,
-  ]);*/
-
-  useEffect(() => {
-    // 1. Show nothing if Edit mode is turned off
-    if (!showEditView.show) return;
-
-    // 2. Consolidated render function (uses existing roots if they exist)
-    const renderEditViews = () => {
-      document.querySelectorAll(".editViewContainer").forEach((container) => {
-        let root = rootMap.current.get(container);
-
-        if (!root) {
-          root = ReactDOM.createRoot(container); // created ONCE
-          rootMap.current.set(container, root);
-        }
-
-        root.render(
-          <EditView
-            key={editViewKey}
-            app={props.app}
-            model={editModel}
-            observer={localObserver}
-            surveyJsData={surveyJsData}
-            resetView={resetEditView}
-            currentQuestionTitle={currentQuestionTitle}
-            currentQuestionName={currentQuestionName}
-            onSaveCallback={handleOnComplete}
-            ref={editViewRef}
-            toolbarOptions={showEditView.toolbarOptions}
-            area={area}
-            price={price.toFixed(2)}
-            geofencingWarningToolbar={geofencingWarningToolbar}
-            drawnGeometryMap={drawnGeometryMap}
-            geometryValidMap={geometryValidMap}
-          />
-        );
-      });
-    };
-
-    // 3. Do the containers already exist? – render directly
-    if (document.querySelectorAll(".editViewContainer").length > 0) {
-      renderEditViews();
-      return; // no MutationObserver is needed
-    }
-
-    // 4. Otherwise – wait for SurveyJS to insert the DOM nodes
-    const observer = new MutationObserver((_, obs) => {
-      if (document.querySelectorAll(".editViewContainer").length > 0) {
-        obs.disconnect();
-        renderEditViews();
-      }
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    // 5. Cleanup: disconnect the observer only
-    return () => observer.disconnect();
-  }, [
-    props.app,
-    localObserver,
-    showEditView.show,
-    editViewKey,
-    editModel,
-    currentQuestionTitle,
-    currentQuestionName,
-    surveyJsData,
-    //resetEditView,
     handleOnComplete,
     editViewRef,
     showEditView.toolbarOptions,
