@@ -12,13 +12,18 @@ import LinearScaleIcon from "@mui/icons-material/LinearScale";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 
-const StyledButton = styled(Button)(({ selected, theme }) => ({
-  backgroundColor: "white",
-  color: selected ? "red" : "black",
-  borderTop: `${theme.spacing(0.5)} solid transparent`,
-  borderBottom: selected
-    ? `${theme.spacing(0.5)} solid ${theme.palette.secondary.main}`
-    : `${theme.spacing(0.5)} solid transparent`,
+const StyledButton = styled(Button, {
+  shouldForwardProp: (prop) => prop !== "selected",
+})(({ theme, selected }) => ({
+  // Lägg &.MuiButton-contained sist för att vinna specifikiteten
+  "&.MuiButton-contained": {
+    backgroundColor: "white",
+    color: selected ? "red" : "black",
+    borderTop: `${theme.spacing(0.5)} solid transparent`,
+    borderBottom: selected
+      ? `${theme.spacing(0.5)} solid ${theme.palette.secondary.main}`
+      : `${theme.spacing(0.5)} solid transparent`,
+  },
 }));
 
 class Toolbar extends Component {
