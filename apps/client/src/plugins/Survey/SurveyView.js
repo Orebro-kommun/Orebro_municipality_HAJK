@@ -1,84 +1,18 @@
-// Make sure to only import the hooks you intend to use
 import React, { useEffect, useState, useRef } from "react";
 import * as Survey from "survey-react-ui";
-import { ComponentCollection } from "survey-core";
 import { Model } from "survey-core";
-//import * as SurveyTheme from "survey-core/themes";
-//import "survey-core/defaultV2.min.css";
+import { SurveyEnvContext } from "./SurveyEnvContext";
 import "survey-core/survey-core.css";
 import "survey-core/i18n/swedish";
-import ReactDOM from "react-dom/client";
 import WKT from "ol/format/WKT";
-
-import EditView from "./EditView.js";
 import EditModel from "./EditModel.js";
-
 import { useSnackbar } from "notistack";
+import registerGeometryCore from "./questions/registerGeometryCore.js";
+import registerGeometryReact from "./questions/registerGeometryReact.js";
 
-//Register new "geometry" component
-ComponentCollection.Instance.add({
-  //Unique component name. It becomes a new question type. Please note, it should be written in lowercase.
-  name: "geometry",
-  //The text that shows on toolbox
-  title: "Geometry",
-  //The actual question that will do the job
-  questionJSON: {
-    type: "html",
-    html: "<div class='editViewContainer'></div>",
-  },
-});
-
-//Register new "geometrypoint" component
-ComponentCollection.Instance.add({
-  //Unique component name. It becomes a new question type. Please note, it should be written in lowercase.
-  name: "geometrypoint",
-  //The text that shows on toolbox
-  title: "GeometryPoint",
-  //The actual question that will do the job
-  questionJSON: {
-    type: "html",
-    html: "<div class='editViewContainer'></div>",
-  },
-});
-
-//Register new "geometrylinestring" component
-ComponentCollection.Instance.add({
-  //Unique component name. It becomes a new question type. Please note, it should be written in lowercase.
-  name: "geometrylinestring",
-  //The text that shows on toolbox
-  title: "GeometryLinestring",
-  //The actual question that will do the job
-  questionJSON: {
-    type: "html",
-    html: "<div class='editViewContainer'></div>",
-  },
-});
-
-//Register new "geometrypolygon" component
-ComponentCollection.Instance.add({
-  //Unique component name. It becomes a new question type. Please note, it should be written in lowercase.
-  name: "geometrypolygon",
-  //The text that shows on toolbox
-  title: "geometryPolygon",
-  //The actual question that will do the job
-  questionJSON: {
-    type: "html",
-    html: "<div class='editViewContainer'></div>",
-  },
-});
-
-//Register new "geometryposition" component
-ComponentCollection.Instance.add({
-  //Unique component name. It becomes a new question type. Please note, it should be written in lowercase.
-  name: "geometrypointposition",
-  //The text that shows on toolbox
-  title: "geometryPointPosition",
-  //The actual question that will do the job
-  questionJSON: {
-    type: "html",
-    html: "<div class='editViewContainer'></div>",
-  },
-});
+// Must be called - just importing is not enough!
+registerGeometryCore();
+registerGeometryReact();
 
 function SurveyView(props) {
   // We're gonna need to use the event observers. Let's destruct them so that we can
@@ -315,6 +249,17 @@ function SurveyView(props) {
     }
   };
 
+  const [editModel] = React.useState(
+    () =>
+      new EditModel({
+        map: props.map,
+        app: props.app,
+        observer: props.localObserver,
+        options: props.options,
+        surveyJsData: surveyJsData,
+      })
+  );
+
   //Combine ID/Name and surveydata and geometry
   const handleOnComplete = React.useCallback(
     async (survey) => {
@@ -327,7 +272,7 @@ function SurveyView(props) {
         editModel.source.id === "simulated"
       ) {
         // Collect feature data based on specific surveyAnswerId
-        featureData = editModel.newMapData
+        const rawFeatureData = editModel.newMapData
           .filter(
             (feature) => feature.surveyAnswerId === specificSurveyAnswerId
           )
@@ -336,6 +281,13 @@ function SurveyView(props) {
             value: feature.wktGeometry,
             name: feature.surveyQuestionName,
           }));
+
+        // Ta bort dubbletter - behåll endast senaste värdet för varje fråga
+        const uniqueFeatureMap = new Map();
+        rawFeatureData.forEach((feature) => {
+          uniqueFeatureMap.set(feature.name, feature);
+        });
+        featureData = Array.from(uniqueFeatureMap.values());
       }
 
       const resultData = [];
@@ -351,7 +303,7 @@ function SurveyView(props) {
           const answer = answeredQuestions[question.name];
           resultData.push({
             title: question.title,
-            value: answer !== undefined ? answer : null, // Set value to null if unanswered
+            value: answer !== undefined ? answer : null,
             name: question.name,
           });
         }
@@ -360,15 +312,25 @@ function SurveyView(props) {
       // Merge resultData (survey data) and featureData
       const mergedResults = [...resultData, ...featureData];
 
-      // Combine data into the final format to send to handleOnComplete
+      // Ytterligare kontroll för att säkerställa inga dubbletter i slutresultatet
+      const finalUniqueResults = [];
+      const seenNames = new Set();
+
+      mergedResults.forEach((result) => {
+        if (!seenNames.has(result.name)) {
+          seenNames.add(result.name);
+          finalUniqueResults.push(result);
+        }
+      });
+
+      // Combine data into the final format
       const combinedData = {
         ...surveyJsData,
-        surveyResults: mergedResults,
+        surveyResults: finalUniqueResults,
         mailTemplate: props.options.selectedMailTemplate,
       };
 
       try {
-        // Call the handleOnComplete method with combined data
         await props.model.handleOnComplete(combinedData);
       } catch (error) {
         setShowErrorMessage(responseErrorMessage);
@@ -376,8 +338,16 @@ function SurveyView(props) {
       setIsCompleted(true);
       setShowEditView({ show: false });
     },
-    // eslint-disable-next-line
-    [surveyJsData.surveyAnswerId, props.model]
+    [
+      surveyJsData,
+      editModel,
+      props.model,
+      props.options.selectedMailTemplate,
+      responseErrorMessage,
+      setShowErrorMessage,
+      setIsCompleted,
+      setShowEditView,
+    ]
   );
 
   // Sets currentQuestionName and title after rendering question
@@ -433,100 +403,8 @@ function SurveyView(props) {
     setGeofencingWarningToolbar(false);
   };
 
-  const [editModel] = React.useState(
-    () =>
-      new EditModel({
-        map: props.map,
-        app: props.app,
-        observer: props.localObserver,
-        options: props.options,
-        surveyJsData: surveyJsData,
-      })
-  );
-
   editModel.currentQuestionName = currentQuestionName;
   editModel.currentQuestionTitle = currentQuestionTitle;
-
-  React.useEffect(() => {
-    const containers = Array.from(
-      document.querySelectorAll(".editViewContainer")
-    );
-
-    if (showEditView.show) {
-      // Creating new root if missing
-      containers.forEach((container) => {
-        if (!rootMap.current.has(container)) {
-          const root = ReactDOM.createRoot(container);
-          rootMap.current.set(container, root);
-
-          root.render(
-            <EditView
-              key={editViewKey}
-              app={props.app}
-              model={editModel}
-              observer={props.localObserver}
-              surveyJsData={surveyJsData}
-              resetView={resetEditView}
-              currentQuestionTitle={currentQuestionTitle}
-              currentQuestionName={currentQuestionName}
-              onSaveCallback={handleOnComplete}
-              ref={editViewRef}
-              toolbarOptions={showEditView.toolbarOptions}
-              area={area}
-              price={price.toFixed(2)}
-              geofencingWarningToolbar={geofencingWarningToolbar}
-              drawnGeometryMap={drawnGeometryMap}
-              geometryValidMap={geometryValidMap}
-            />
-          );
-        }
-      });
-
-      // REnder existing root
-      rootMap.current.forEach((root, container) => {
-        if (containers.includes(container)) {
-          root.render(
-            <EditView
-              key={editViewKey}
-              app={props.app}
-              model={editModel}
-              observer={props.localObserver}
-              surveyJsData={surveyJsData}
-              resetView={resetEditView}
-              currentQuestionTitle={currentQuestionTitle}
-              currentQuestionName={currentQuestionName}
-              onSaveCallback={handleOnComplete}
-              ref={editViewRef}
-              toolbarOptions={showEditView.toolbarOptions}
-              area={area}
-              price={price.toFixed(2)}
-              geofencingWarningToolbar={geofencingWarningToolbar}
-              drawnGeometryMap={drawnGeometryMap}
-              geometryValidMap={geometryValidMap}
-            />
-          );
-        }
-      });
-    }
-  }, [
-    showEditView,
-    editViewKey,
-    props.app,
-    editModel,
-    props.localObserver,
-    surveyJsData,
-    //resetEditView,
-    currentQuestionTitle,
-    currentQuestionName,
-    handleOnComplete,
-    editViewRef,
-    showEditView.toolbarOptions,
-    area,
-    price,
-    geofencingWarningToolbar,
-    drawnGeometryMap,
-    geometryValidMap,
-  ]);
 
   useEffect(() => {
     const newSurvey = new Model(surveyJSON);
@@ -601,9 +479,28 @@ function SurveyView(props) {
   Survey.surveyLocalization.defaultLocale = "sv";
 
   return (
-    <>
+    <SurveyEnvContext.Provider
+      value={{
+        editViewKey: editViewKey,
+        currentQuestionTitle: currentQuestionTitle,
+        currentQuestionName: currentQuestionName,
+        onSaveCallback: handleOnComplete,
+        ref: editViewRef,
+        app: props.app,
+        model: editModel,
+        observer: props.localObserver,
+        surveyJsData,
+        resetView: resetEditView,
+        toolbarOptions: showEditView.toolbarOptions,
+        area,
+        price: price.toFixed(2),
+        geofencingWarningToolbar,
+        drawnGeometryMap,
+        geometryValidMap,
+      }}
+    >
       {!isCompleted ? (
-        survey && (
+        survey ? (
           <Survey.Survey
             model={survey}
             onComplete={handleOnComplete}
@@ -611,7 +508,7 @@ function SurveyView(props) {
             onAfterRenderQuestion={handleAfterRenderQuestion}
             onCurrentPageChanged={handlePageChange}
           />
-        )
+        ) : null
       ) : (
         <div
           className="response-message-container"
@@ -625,67 +522,60 @@ function SurveyView(props) {
             textAlign: "center",
           }}
         >
-          {!showErrorMessage ? (
-            messageContainsHTML ? (
-              // If content HTML render as HTML
+          {!showErrorMessage &&
+            (messageContainsHTML ? (
               <div
                 className="response-message"
-                dangerouslySetInnerHTML={{
-                  __html: responseMessage,
-                }}
-              ></div>
+                dangerouslySetInnerHTML={{ __html: responseMessage }}
+              />
             ) : (
-              // If not HTML, set style, render as text and manage \n
-              <p
-                style={{
-                  fontSize: "1.5em",
-                  margin: "0",
-                  fontWeight: "bold",
-                }}
-              >
-                {responseMessage.split("\n").map((line, index) => (
-                  <React.Fragment key={index}>
+              <p style={{ fontSize: "1.5em", margin: 0, fontWeight: "bold" }}>
+                {responseMessage.split("\n").map((line, idx) => (
+                  <React.Fragment key={idx}>
                     {line}
                     <br />
                   </React.Fragment>
                 ))}
               </p>
-            )
-          ) : null}
+            ))}
+
           {hasRestartButtonText && (
             <button
               onClick={restartSurvey}
               style={{
-                marginTop: "20px",
+                marginTop: 20,
                 padding: "10px 20px",
                 fontSize: "1em",
                 cursor: "pointer",
-                backgroundColor: "#333333",
+                backgroundColor: "#333",
                 color: "#fff",
                 border: "none",
-                borderRadius: "5px",
+                borderRadius: 5,
               }}
             >
               {restartButtonText}
             </button>
           )}
+
           <br />
+
           <button
             onClick={handleAction}
             style={{
               padding: "10px 20px",
               fontSize: "1em",
               cursor: "pointer",
-              backgroundColor: "#333333",
+              backgroundColor: "#333",
               color: "#fff",
               border: "none",
-              borderRadius: "5px",
+              borderRadius: 5,
             }}
           >
             Stäng enkätfönster
           </button>
         </div>
       )}
+
       {showErrorMessage && (
         <div
           className="error-message"
@@ -695,32 +585,20 @@ function SurveyView(props) {
             alignItems: "center",
             padding: "10px 20px",
             fontSize: "1em",
-            cursor: "pointer",
             backgroundColor: "#990000",
             color: "#fff",
-            border: "none",
-            borderRadius: "5px",
+            borderRadius: 5,
           }}
         >
           {messageErrorContainsHTML ? (
-            // If content HTML render as HTML
             <div
               className="response-error-message"
-              dangerouslySetInnerHTML={{
-                __html: responseErrorMessage,
-              }}
-            ></div>
+              dangerouslySetInnerHTML={{ __html: responseErrorMessage }}
+            />
           ) : (
-            // If not HTML, set style, render as text and manage \n
-            <p
-              style={{
-                fontSize: "1.5em",
-                margin: "0",
-                fontWeight: "bold",
-              }}
-            >
-              {responseErrorMessage.split("\n").map((line, index) => (
-                <React.Fragment key={index}>
+            <p style={{ fontSize: "1.5em", margin: 0, fontWeight: "bold" }}>
+              {responseErrorMessage.split("\n").map((line, idx) => (
+                <React.Fragment key={idx}>
                   {line}
                   <br />
                 </React.Fragment>
@@ -729,7 +607,7 @@ function SurveyView(props) {
           )}
         </div>
       )}
-    </>
+    </SurveyEnvContext.Provider>
   );
 }
 

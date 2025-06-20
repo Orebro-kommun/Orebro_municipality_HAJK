@@ -150,7 +150,7 @@ function Survey(props) {
           },
         ],
         height: "dynamic", // The height of the plugin-window in px. "dynamic" resizes the window so all content fits, "auto" uses all available space.
-        width: 650, // The width of the plugin-window in px.
+        width: 750, // The width of the plugin-window in px.
         onWindowHide: onWindowHide, // Handler for when user closes window.
         onWindowShow: onWindowShow, // Handler for when user shows window.
       }}

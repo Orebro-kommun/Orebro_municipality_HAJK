@@ -3,19 +3,24 @@ import { styled } from "@mui/material/styles";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-//import DeleteIcon from "@mui/icons-material/Delete";
 import ScatterPlotIcon from "@mui/icons-material/ScatterPlot";
 import BorderStyleIcon from "@mui/icons-material/BorderStyle";
 import LinearScaleIcon from "@mui/icons-material/LinearScale";
-//import ZoomOutMapIcon from "@mui/icons-material/ZoomOutMap";
-//import FormatShapesIcon from "@mui/icons-material/FormatShapes";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 
 const StyledButton = styled(Button, {
   shouldForwardProp: (prop) => prop !== "selected",
 })(({ theme, selected }) => ({
-  // Lägg &.MuiButton-contained sist för att vinna specifikiteten
+  // Add basic size styles first
+  minHeight: "40px !important",
+  padding: "10px 20px !important",
+  fontSize: "14px !important",
+  lineHeight: "1.5 !important",
+  whiteSpace: "nowrap !important",
+  textTransform: "none !important",
+
+  // Your existing styles
   "&.MuiButton-contained": {
     backgroundColor: "white",
     color: selected ? "red" : "black",
@@ -23,6 +28,21 @@ const StyledButton = styled(Button, {
     borderBottom: selected
       ? `${theme.spacing(0.5)} solid ${theme.palette.secondary.main}`
       : `${theme.spacing(0.5)} solid transparent`,
+    // Add size styles here as well for extra assurance
+    minHeight: "40px !important",
+    padding: "10px 20px !important",
+  },
+
+  // Ensure icons have correct spacing
+  "& .MuiSvgIcon-root": {
+    fontSize: "20px",
+  },
+
+  // Override any SurveyJS styles
+  "&.MuiButton-root": {
+    minHeight: "40px !important",
+    padding: "10px 20px !important",
+    fontSize: "14px !important",
   },
 }));
 
