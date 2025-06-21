@@ -204,6 +204,8 @@ class Toolbar extends Component {
 
     if (!editSource || editFeature) return null;
 
+    const toolbarOptions = this.props.toolbarOptions;
+
     return (
       <Grid container spacing={1}>
         <Grid item xs={12}>
@@ -297,9 +299,9 @@ class Toolbar extends Component {
           </Box>
         </Grid>
         <Grid container spacing={2}>
-          {(this.toolbarOptions === "all" ||
-            this.toolbarOptions === "point" ||
-            this.toolbarOptions === "position") && (
+          {(toolbarOptions === "all" ||
+            toolbarOptions === "point" ||
+            toolbarOptions === "position") && (
             <Grid item xs={4}>
               <StyledButton
                 variant="contained"
@@ -318,8 +320,7 @@ class Toolbar extends Component {
             </Grid>
           )}
 
-          {(this.toolbarOptions === "all" ||
-            this.toolbarOptions === "position") && (
+          {(toolbarOptions === "all" || toolbarOptions === "position") && (
             <Grid item xs={4}>
               <StyledButton
                 variant="contained"
@@ -336,8 +337,7 @@ class Toolbar extends Component {
             </Grid>
           )}
 
-          {(this.toolbarOptions === "all" ||
-            this.toolbarOptions === "linestring") && (
+          {(toolbarOptions === "all" || toolbarOptions === "linestring") && (
             <Grid item xs={4}>
               <StyledButton
                 variant="contained"
@@ -356,8 +356,7 @@ class Toolbar extends Component {
             </Grid>
           )}
 
-          {(this.toolbarOptions === "all" ||
-            this.toolbarOptions === "polygon") && (
+          {(toolbarOptions === "all" || toolbarOptions === "polygon") && (
             <Grid item xs={4}>
               <StyledButton
                 variant="contained"
@@ -375,7 +374,7 @@ class Toolbar extends Component {
                 Markera ett område
                 <BorderStyleIcon sx={{ marginLeft: 1 }} />
               </StyledButton>
-              {this.surveyTool.options.activatedMapOrder && (
+              {this.surveyTool?.options?.activatedMapOrder && (
                 <Typography style={{ fontSize: "12px", lineHeight: "1.4" }}>
                   <b>Area i kvm:</b> {this.props.area} <br />
                   <b>Pris:</b> {this.props.price} SEK
@@ -384,7 +383,6 @@ class Toolbar extends Component {
             </Grid>
           )}
         </Grid>
-
         <Grid item xs={12}>
           {/*<Typography>Editera</Typography>*/}
         </Grid>
