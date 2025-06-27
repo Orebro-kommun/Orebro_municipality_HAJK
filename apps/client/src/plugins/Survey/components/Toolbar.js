@@ -12,13 +12,28 @@ import Grid from "@mui/material/Grid";
 const StyledButton = styled(Button, {
   shouldForwardProp: (prop) => prop !== "selected",
 })(({ theme, selected }) => ({
-  // Add basic size styles first
+  // Basic styles
   minHeight: "40px !important",
-  padding: "10px 20px !important",
+  padding: "2px 4px !important",
   fontSize: "14px !important",
   lineHeight: "1.5 !important",
-  whiteSpace: "nowrap !important",
   textTransform: "none !important",
+
+  // Remove nowrap so text can wrap on mobile
+  whiteSpace: "normal !important",
+
+  // Center content
+  display: "flex !important",
+  alignItems: "center !important",
+  justifyContent: "center !important",
+  textAlign: "center !important",
+
+  // Responsive font size
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "12px !important",
+    padding: "8px 10px !important",
+    minHeight: "48px !important", // Lite högre för att rymma två rader
+  },
 
   // Your existing styles
   "&.MuiButton-contained": {
@@ -28,21 +43,15 @@ const StyledButton = styled(Button, {
     borderBottom: selected
       ? `${theme.spacing(0.5)} solid ${theme.palette.secondary.main}`
       : `${theme.spacing(0.5)} solid transparent`,
-    // Add size styles here as well for extra assurance
-    minHeight: "40px !important",
-    padding: "10px 20px !important",
   },
 
-  // Ensure icons have correct spacing
+  // Icons
   "& .MuiSvgIcon-root": {
     fontSize: "20px",
-  },
-
-  // Override any SurveyJS styles
-  "&.MuiButton-root": {
-    minHeight: "40px !important",
-    padding: "10px 20px !important",
-    fontSize: "14px !important",
+    flexShrink: 0, // Förhindra att ikoner krymper
+    [theme.breakpoints.down("sm")]: {
+      fontSize: "18px",
+    },
   },
 }));
 
